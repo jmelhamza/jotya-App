@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 import { connectDB } from "./config/db.js";
 import productRoutes from "./routes/product.routes.js"
 import { userRoutes } from "./routes/user.routes.js"
+import authRoutes from './routes/auth.router.js';
+
 
 
 dotenv.config();
@@ -16,7 +18,7 @@ app.use(express.json())
 
 app.use("/api/products",productRoutes)
 app.use("/api/users",userRoutes)
-
+app.use('/api/auth',authRoutes)
 
  
 
