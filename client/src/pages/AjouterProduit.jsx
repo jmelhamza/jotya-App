@@ -1,101 +1,101 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import "../styles/AjouterProduit.css"
+import '../styles/AjouterProduit.css';
 
 const AjouterProduit = () => {
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    price: '',
-    image: '',
-  });
-  const [errors, setErrors] = useState({});
-  const [message, setMessage] = useState('');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState(''); // ✅ state ديال الوصف
+  const [price, setPrice] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
-  const handleChange = e => {
-    setFormData({...formData, [e.target.name]: e.target.value});
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
   };
 
-  const validate = () => {
-    const newErrors = {};
-    if (!formData.title.trim()) newErrors.title = 'Le titre est requis';
-    if (!formData.price || isNaN(formData.price)) newErrors.price = 'Prix valide requis';
-    if (!formData.image.trim()) newErrors.image = 'URL de l\'image requise';
-    return newErrors;
-  };
-
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage('');
-    const validationErrors = validate();
-    setErrors(validationErrors);
 
-    if (Object.keys(validationErrors).length === 0) {
-      try {
-        const token = localStorage.getItem('token');
-        const productData = {
-          title: formData.title,
-          description: formData.description,
-          price: parseFloat(formData.price),
-          image: [formData.image],  // لأن في الموديل image هو array
-        };
+    if (!imageFile) {
+      alert('Veuillez choisir une image');
+      return;
+    }
 
-        await axios.post('http://localhost:5000/api/products', productData, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        setMessage('Produit ajouté avec succès!');
-        setFormData({title: '', description: '', price: '', image: ''});
-      } catch (error) {
-        console.error("Erreur Axios:", error.response)
-        setMessage('Erreur lors de l\'ajout du produit');
-      }
+    try {
+      // رفع الصورة
+      const formData = new FormData();
+      formData.append('image', imageFile);
+
+      const uploadRes = await axios.post('http://localhost:5000/api/products/upload-image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      const imageUrl = uploadRes.data.imageUrl;
+
+      // إرسال البيانات
+      await axios.post('http://localhost:5000/api/products', {
+        title,
+        description, // ✅ نضيف الوصف هنا
+        price,
+        image: [imageUrl],
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        }
+      });
+
+      alert('Produit ajouté avec succès!');
+      setTitle('');
+      setDescription('');
+      setPrice('');
+      setImageFile(null);
+      setImagePreview(null);
+    } catch (error) {
+      console.error(error);
+      alert("Erreur lors de l'ajout du produit");
     }
   };
 
   return (
-    <div className="ajouter-produit-container" style={{maxWidth:'600px', margin:'20px auto'}}>
-      <h2>Ajouter un produit</h2>
-      {message && <p>{message}</p>}
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="title"
-          placeholder="Titre"
-          value={formData.title}
-          onChange={handleChange}
-        />
-        {errors.title && <p className="error">{errors.title}</p>}
+    <form onSubmit={handleSubmit} className="ajouter-produit-form">
+      <input
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        placeholder="Titre du produit"
+        required
+      />
+      
+      <textarea
+        value={description}
+        onChange={e => setDescription(e.target.value)}
+        placeholder="Description du produit"
+        required
+      ></textarea>
 
-        <textarea
-          name="description"
-          placeholder="Description"
-          value={formData.description}
-          onChange={handleChange}
-        />
+      <input
+        type="number"
+        value={price}
+        onChange={e => setPrice(e.target.value)}
+        placeholder="Prix"
+        required
+      />
 
-        <input
-          type="text"
-          name="price"
-          placeholder="Prix"
-          value={formData.price}
-          onChange={handleChange}
-        />
-        {errors.price && <p className="error">{errors.price}</p>}
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleImageChange}
+        required
+      />
 
-        <input
-          type="text"
-          name="image"
-          placeholder="URL de l'image"
-          value={formData.image}
-          onChange={handleChange}
-        />
-        {errors.image && <p className="error">{errors.image}</p>}
+      {imagePreview && <img src={imagePreview} alt="Prévisualisation" style={{ width: '150px', marginTop: '10px' }} />}
 
-        <button type="submit">Ajouter</button>
-      </form>
-    </div>
+      <button type="submit">Ajouter produit</button>
+    </form>
   );
 };
 

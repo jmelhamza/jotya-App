@@ -4,6 +4,7 @@ import '../styles/Products.css';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
+  const [selectedImage, setSelectedImage] = useState(null); // 👈 الصورة المفتوحة
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -34,15 +35,18 @@ const Products = () => {
           products.map(product => (
             <div key={product._id} className="product-card">
               {product.image && product.image.length > 0 && (
-                <img src={product.image[0]} alt={product.title} className="product-image" />
+                <img
+                  src={`http://localhost:5000${product.image[0]}`}
+                  alt={product.title}
+                  onClick={() => setSelectedImage(`http://localhost:5000${product.image[0]}`)}
+                  className="product-image"
+                />
               )}
               <h3>{product.title}</h3>
               <p>{product.description}</p>
               <p className="price">{product.price} MAD</p>
-
               {product.seller ? (
                 <p>Publié par: <a href={`/vendeur/${product.seller._id}`}>{product.seller.name}</a></p>
-
               ) : (
                 <p>Vendeur inconnu</p>
               )}
@@ -50,6 +54,14 @@ const Products = () => {
           ))
         )}
       </div>
+
+      {/* 👇 Popup de l'image */}
+      {selectedImage && (
+  <div className="image-popup">
+    <button className="close-button" onClick={() => setSelectedImage(null)}>Fermer ✖</button>
+    <img src={selectedImage} alt="Agrandie" />
+  </div>
+)}
     </div>
   );
 };

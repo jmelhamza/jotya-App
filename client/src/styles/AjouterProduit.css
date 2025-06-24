@@ -1,57 +1,49 @@
-.ajouter-produit-container {
-  max-width: 600px;
+.ajouter-produit-form {
+  max-width: 500px;
   margin: 40px auto;
   padding: 20px;
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-}
-
-.ajouter-produit-container h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.ajouter-produit-container form {
+  background-color: #f8f8f8;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
+  gap: 20px;
 }
 
-.ajouter-produit-container input,
-.ajouter-produit-container textarea {
-  padding: 10px;
-  margin-bottom: 15px;
+.ajouter-produit-form input,
+.ajouter-produit-form textarea {
+  padding: 12px 14px;
+  border-radius: 6px;
   border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 1rem;
+  font-size: 16px;
+  font-family: sans-serif;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.ajouter-produit-container button {
-  padding: 10px;
-  background-color: #007bff;
-  border: none;
+.ajouter-produit-form textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.ajouter-produit-form button {
+  background-color: #1e90ff;
   color: white;
-  font-weight: bold;
-  border-radius: 5px;
+  padding: 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
 
-.ajouter-produit-container button:hover {
-  background-color: #0056b3;
+.ajouter-produit-form button:hover {
+  background-color: #0073e6;
 }
 
-.ajouter-produit-container .error {
-  color: red;
-  font-size: 0.875rem;
-  margin-top: -10px;
-  margin-bottom: 10px;
-}
-
-.ajouter-produit-container p {
-  text-align: center;
-  margin-bottom: 10px;
-  color: green;
-  font-weight: 500;
+.ajouter-produit-form img {
+  max-width: 150px;
+  border-radius: 6px;
+  margin-top: 10px;
+  align-self: center;
 }

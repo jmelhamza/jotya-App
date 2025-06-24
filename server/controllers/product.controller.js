@@ -2,39 +2,41 @@
   import mongoose from "mongoose"
   
   
-  export  const getProducts = async (req,res)=>{
-    try {
-        const products = await Product.find( {})
-        res.status(200).json({succes:true,data : products})
-         
-    } catch (error){
-        console.log ('error in fttching products',error.message)
-        res.status(500).json({succes:false,message : 'server error '})
-    }
-}  
+   
+export const getProducts = async (req, res) => {
+  try {
+    const products = await Product.find().populate('seller', 'name email');
+    res.status(200).json({ succes: true, data: products });
+  } catch (error) {
+    console.log('error in fetching products', error.message);
+    res.status(500).json({ succes: false, message: 'server error' });
+  }
+};
 
+export const createProduct = async (req, res) => {
+  const { title, price, image, description } = req.body;
 
-export const createProduct = async(req,res)=>{
-const product =req.body 
-if (!product.title || !product.price || !product.image){
-        return res.status (400).json ({succes : false ,  message : "please provide all fields"})
-     }
-     const newProduct  = new Product ({
+  if (!title || !price || !image) {
+    return res.status(400).json({ success: false, message: "Please provide all fields" });
+  }
+
+  const newProduct = new Product({
     title,
     price,
     image,
     description,
-    seller: req.user.id 
-  })
-     try{
- await newProduct.save()
-res.status(201).json({succes :true,data : newProduct})
-     }
-      catch (error){
-       console.error ('error in create product',error.message)
-       res.status(500).json({succes:false , message :"server error"}) 
-      }
-}
+    seller: req.user.id  // ✅ كيضيف تلقائيا المالك من JWT
+  });
+
+  try {
+    await newProduct.save();
+    res.status(201).json({ success: true, data: newProduct });
+  } catch (error) {
+    console.error("error in create product", error.message);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 
   
 export const updateProduct = async (req, res) => {
@@ -84,3 +86,15 @@ export const updateProduct = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+// route: GET /api/products/user/:userId
+export const getProductsByUser = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const products = await Product.find({ seller: userId });
+    res.status(200).json(products);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur lors de la récupération" });
+  }
+};
+
+

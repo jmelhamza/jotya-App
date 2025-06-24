@@ -10,28 +10,29 @@ import Logout from './pages/Logout';
 import SellerPage from './pages/SellerPage';
 import SellerProfile from './pages/SellerProfile';
 import MonCompte from './pages/MonCompte';
+import Accueil from './pages/Accueil';
 
 function App() {
   return (
     <Routes>
-      {/* ✅ Routes بدون حماية */}
+      {/* Routes بدون حماية */}
       <Route path="/connexion" element={<Login />} />
       <Route path="/inscription" element={<Register />} />
 
-      {/* ✅ Routes تحت Layout ولكن محميين */}
+      {/* Routes تحت Layout ومحميين */}
       <Route path="/" element={
         <PrivateRoute>
           <Layout />
         </PrivateRoute>
       }>
-        <Route index element={<Products />} />
+        {/* هنا الصفحة الرئيسية هي Accueil */}
+        <Route index element={<Accueil />} />
         <Route path="produits" element={<Products />} />
         <Route path="ajouter-produit" element={<AjouterProduit />} />
-        <Route path="/logout" element={<Logout />} />
-        <Route path="admin" element={<AdminDashboard/>} />
-        {/* <Route path="/vendeur/:sellerId" element={</SellerProfile >} /> */}
-         <Route path="/vendeur/:id" element={<SellerProfile />} />
-          <Route path="/mon-compte" element={<MonCompte />} />
+        <Route path="logout" element={<Logout />} />
+        <Route path="admin" element={<AdminDashboard />} />
+        <Route path="vendeur/:id" element={<SellerProfile />} />
+        <Route path="mon-compte" element={<MonCompte />} />
       </Route>
     </Routes>
   );

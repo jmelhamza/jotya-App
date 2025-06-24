@@ -26,11 +26,41 @@ const SellerProfile = () => {
   if (error) return <p>{error}</p>;
 
   return (
-    <div>
+    <div style={{ maxWidth: '500px', margin: 'auto', padding: '1rem', textAlign: 'center' }}>
+      {seller.image ? (
+        <img
+          src={`http://localhost:5000${seller.image}`}
+          alt={seller.name}
+          style={{
+            width: '150px',
+            height: '150px',
+            borderRadius: '50%',
+            objectFit: 'cover',
+            marginBottom: '1rem',
+            border: '2px solid #ccc'
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            width: '150px',
+            height: '150px',
+            borderRadius: '50%',
+            backgroundColor: '#ddd',
+            display: 'inline-block',
+            marginBottom: '1rem',
+            lineHeight: '150px',
+            fontSize: '3rem',
+            color: '#666'
+          }}
+        >
+          {seller.name.charAt(0).toUpperCase()}
+        </div>
+      )}
       <h2>Profil de {seller.name}</h2>
-      <p>Email: {seller.email}</p>
-      <p>Téléphone: {seller.phone ? seller.phone : 'Non renseigné'}</p>
-      {/* عرض معلومات أخرى إذا بغيت */}
+      <p><strong>Email :</strong> {seller.email}</p>
+      <p><strong>Téléphone :</strong> {seller.phone ? seller.phone : 'Non renseigné'}</p>
+      {/* يمكن تزيد معلومات إضافية هنا */}
     </div>
   );
 };

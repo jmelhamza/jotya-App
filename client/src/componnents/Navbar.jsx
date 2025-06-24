@@ -10,7 +10,7 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="logo"><Link to="/">Jotiya</Link></div>
       <ul className="nav-links">
-        <li><Link to="/">Accueil</Link></li>
+           <li><Link to="/">Accueil</Link></li>  {/* هنا الرابط للصفحة الرئيسية */}
         <li><Link to="/produits">Produits</Link></li>
           <li><Link to="/mon-compte">Mon Compte</Link></li> {/* هنا زدنا الرابط */}
         {token && <li><Link to="/ajouter-produit">Ajouter un produit</Link></li>}

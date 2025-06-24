@@ -75,3 +75,7 @@
   margin-top: 8px;
   color: #2c3e50;
 }
+img {
+  border-radius: 50%;
+  object-fit: cover;
+}
