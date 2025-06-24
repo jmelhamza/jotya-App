@@ -5,12 +5,13 @@ import '../styles/MonCompte.css';
 
 const MonCompte = () => {
   const [user, setUser] = useState(null);
+  const [myProducts, setMyProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserData = async () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -22,11 +23,15 @@ const MonCompte = () => {
         const decoded = jwtDecode(token);
         const userId = decoded.id || decoded._id;
 
-        const res = await axios.get(`http://localhost:5000/api/users/${userId}`, {
+        // جلب بيانات المستخدم
+        const userRes = await axios.get(`http://localhost:5000/api/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        setUser(userRes.data);
 
-        setUser(res.data);
+        // جلب المنتجات ديال المستخدم
+        const productsRes = await axios.get(`http://localhost:5000/api/products/user/${userId}`);
+        setMyProducts(productsRes.data);
       } catch (err) {
         setError('Erreur lors de la récupération des données utilisateur.');
       } finally {
@@ -34,7 +39,7 @@ const MonCompte = () => {
       }
     };
 
-    fetchUser();
+    fetchUserData();
   }, []);
 
   const handleImageChange = async (e) => {
@@ -53,9 +58,24 @@ const MonCompte = () => {
         }
       });
       setMessage("Photo mise à jour avec succès !");
-      window.location.reload(); // إعادة تحميل الصفحة لعرض الصورة الجديدة
+      window.location.reload();
     } catch (err) {
       setError("Erreur lors de l'envoi de l'image.");
+    }
+  };
+
+  const handleDelete = async (productId) => {
+    const confirm = window.confirm("Voulez-vous vraiment supprimer ce produit ?");
+    if (!confirm) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://localhost:5000/api/products/${productId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMyProducts(myProducts.filter(p => p._id !== productId));
+    } catch (err) {
+      alert("Erreur lors de la suppression du produit.");
     }
   };
 
@@ -80,6 +100,26 @@ const MonCompte = () => {
         <p><strong>Email :</strong> {user.email}</p>
         <p><strong>Téléphone :</strong> {user.phone || 'Non renseigné'}</p>
         {message && <p className="success">{message}</p>}
+      </div>
+
+      <div className="my-products">
+        <h3>Mes Produits</h3>
+        {myProducts.length === 0 ? (
+          <p>Aucun produit ajouté.</p>
+        ) : (
+          myProducts.map((product) => (
+            <div key={product._id} className="product-item">
+              {product.image && product.image[0] && (
+                <img src={`http://localhost:5000${product.image[0]}`} alt={product.title} />
+              )}
+              <div>
+                <p><strong>{product.title}</strong></p>
+                <p>{product.price} MAD</p>
+                <button onClick={() => handleDelete(product._id)}>Supprimer</button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

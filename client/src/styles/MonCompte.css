@@ -47,4 +47,20 @@
   border: 2px solid #ddd;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
+.my-products {
+  margin-top: 30px;
+}
+
+.product-item {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.product-item img {
+  width: 100px;
+  height: auto;
+  border-radius: 8px;
+}
 
