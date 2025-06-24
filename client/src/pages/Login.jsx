@@ -1,32 +1,47 @@
 import React, { useState } from 'react';
 import '../styles/Login.css';
-import axios from "axios";
 import jotiyaLogo from '../assets/jotiya-logo.png';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
+  const [message, setMessage] = useState('');
 
   const handleChange = e => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.email) newErrors.email = "L'email est requis";
+    if (!formData.password) newErrors.password = "Le mot de passe est requis";
+    return newErrors;
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
-    setError('');
+    const validationErrors = validate();
+    setErrors(validationErrors);
+    setMessage('');
 
-    try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", formData);
-      const { token } = res.data;
+    if (Object.keys(validationErrors).length === 0) {
+      try {
+        const res = await axios.post('http://localhost:5000/api/auth/login', formData);
+        const token= res.data.token;
 
-      // ✅ خزن التوكن فـ localStorage
-      localStorage.setItem("token", token);
+        localStorage.setItem('token', res.data.token); // ✅ هذا هو الصحيح
 
-      alert("Connexion réussie !");
-      // redirect, reload, etc...
-    } catch (err) {
-      console.error("Login error:", err.response?.data || err.message);
-      setError(err.response?.data?.message || "Erreur lors de la connexion");
+ // ✅ حفظ التوكن
+        setMessage("Connexion réussie !");
+        navigate('/'); // ✅ توجيه إلى Accueil
+      } catch (err) {
+        console.error(err);
+        setMessage("Email ou mot de passe incorrect.");
+      }
     }
   };
 
@@ -37,6 +52,7 @@ const Login = () => {
       </div>
       <div className="login-right">
         <h2>Connexion</h2>
+        {message && <p>{message}</p>}
         <form className="login-form" onSubmit={handleSubmit}>
           <input
             type="email"
@@ -44,17 +60,18 @@ const Login = () => {
             placeholder="Email"
             value={formData.email}
             onChange={handleChange}
-            required
           />
+          {errors.email && <p className="error">{errors.email}</p>}
+
           <input
             type="password"
             name="password"
             placeholder="Mot de passe"
             value={formData.password}
             onChange={handleChange}
-            required
           />
-          {error && <p className="error">{error}</p>}
+          {errors.password && <p className="error">{errors.password}</p>}
+
           <button type="submit">Se connecter</button>
         </form>
         <p>Pas de compte ? <a href="/inscription">S'inscrire</a></p>

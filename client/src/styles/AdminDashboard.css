@@ -1,0 +1,48 @@
+.admin-dashboard {
+  padding: 20px;
+  max-width: 1000px;
+  margin: auto;
+}
+
+h2, h3 {
+  text-align: center;
+  color: #333;
+}
+
+.dashboard-section {
+  margin-top: 40px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: center;
+}
+
+th {
+  background-color: #f0f0f0;
+}
+
+button {
+  background-color: #c0392b;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+button:hover {
+  background-color: #e74c3c;
+}
+
+p {
+  text-align: center;
+  color: green;
+}
