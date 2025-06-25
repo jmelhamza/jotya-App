@@ -1,133 +1,106 @@
+/* 🧱 الحاوية الرئيسية */
 .products-container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
-  gap: 20px;
-}
-
-.product-card {
-  background-color: #fff;
-  border-radius: 6px;
-  box-shadow: 0 0 6px rgba(0,0,0,0.1);
-  padding: 15px;
-  text-align: center;
-}
-
-.product-image {
-  max-width: 100%;
-  height: 140px;
-  object-fit: cover;
-  border-radius: 4px;
-  margin-bottom: 10px;
-}
-
-.price {
-  font-weight: bold;
-  color: #007bff;
-}
-.products-container {
-  padding: 20px;
   max-width: 1200px;
   margin: auto;
+  padding: 30px 20px;
 }
 
+/* العنوان */
 .products-container h2 {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
+  font-size: 2rem;
+  color: #222;
 }
 
+/* الشبكة */
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 25px;
 }
 
+/* البطاقة */
 .product-card {
   background-color: #fff;
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  transition: box-shadow 0.3s ease;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .product-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
-.product-card img {
+/* صورة المنتج */
+.product-image {
   width: 100%;
   height: 200px;
   object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 10px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  cursor: pointer;
+  transition: opacity 0.3s;
 }
 
+.product-image:hover {
+  opacity: 0.9;
+}
+
+/* نصوص داخل البطاقة */
 .product-card h3 {
-  font-size: 18px;
+  font-size: 1.2rem;
   margin: 10px 0 5px;
+  color: #333;
 }
 
 .product-card p {
+  font-size: 0.95rem;
+  color: #555;
   margin: 5px 0;
 }
 
 .price {
   font-weight: bold;
   color: #007b00;
-}
-.image-popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.8); /* خلفية سوداء شفافة */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
+  font-size: 1rem;
+  margin-top: 8px;
 }
 
-.image-popup img {
-  max-width: 90%;
-  max-height: 90%;
-  border-radius: 8px;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-  cursor: pointer;
-}
+/* 🔍 Popup ديال الصورة */
 .image-popup {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.9);
+  background-color: rgba(10, 10, 10, 0.95);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
 }
 
 .image-popup img {
   max-width: 90%;
   max-height: 80%;
   border-radius: 12px;
-  box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 40px rgba(255, 255, 255, 0.3);
 }
 
+/* زر الإغلاق */
 .close-button {
-  background-color: white;
-  color: black;
+  background-color: #fff;
+  color: #333;
   border: none;
-  padding: 10px 20px;
+  padding: 12px 24px;
   margin-bottom: 20px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: bold;
   font-size: 16px;
   cursor: pointer;
@@ -135,6 +108,50 @@
 }
 
 .close-button:hover {
-  background-color: #eee;
+  background-color: #f0f0f0;
 }
 
+/* 🌈 Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 📱 Responsive تحسين */
+@media (max-width: 768px) {
+  .product-card {
+    padding: 15px;
+  }
+
+  .product-image {
+    height: 160px;
+  }
+
+  .products-container h2 {
+    font-size: 1.6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-image {
+    height: 140px;
+  }
+
+  .product-card h3 {
+    font-size: 1rem;
+  }
+
+  .product-card p {
+    font-size: 0.85rem;
+  }
+
+  .price {
+    font-size: 0.95rem;
+  }
+}
