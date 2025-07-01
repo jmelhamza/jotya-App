@@ -1,15 +1,13 @@
-  import Product from "../models/product.model.js"
-  import mongoose from "mongoose"
-  
-  
-   
+import Product from "../models/product.model.js";
+import mongoose from "mongoose";
+
 export const getProducts = async (req, res) => {
   try {
     const products = await Product.find().populate('seller', 'name email');
-    res.status(200).json({ succes: true, data: products });
+    res.status(200).json({ success: true, data: products });
   } catch (error) {
     console.log('error in fetching products', error.message);
-    res.status(500).json({ succes: false, message: 'server error' });
+    res.status(500).json({ success: false, message: 'server error' });
   }
 };
 
@@ -25,7 +23,7 @@ export const createProduct = async (req, res) => {
     price,
     image,
     description,
-    seller: req.user.id  // ✅ كيضيف تلقائيا المالك من JWT
+    seller: req.user.id
   });
 
   try {
@@ -37,11 +35,10 @@ export const createProduct = async (req, res) => {
   }
 };
 
-
-  
 export const updateProduct = async (req, res) => {
   const { id } = req.params;
-  const update = req.body;
+  const title = req.body.title;
+  const price = req.body.price;
 
   try {
     const product = await Product.findById(id);
@@ -50,21 +47,26 @@ export const updateProduct = async (req, res) => {
       return res.status(404).json({ success: false, message: "Product not found" });
     }
 
-    // ✅ تحقق من الصلاحية
     if (product.seller.toString() !== req.user.id && req.user.role !== "admin") {
       return res.status(403).json({ success: false, message: "Not authorized" });
     }
 
-    const updatedProduct = await Product.findByIdAndUpdate(id, update, { new: true });
+    if (title) product.title = title;
+    if (price) product.price = price;
+    if (req.file) {
+      product.image = [`/uploads/${req.file.filename}`];
+    }
+
+    const updatedProduct = await product.save();
     res.status(200).json({ success: true, data: updatedProduct });
 
   } catch (error) {
+    console.error("Error updating product:", error.message);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-
-   export const deleteProduct = async (req, res) => {
+export const deleteProduct = async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -74,7 +76,6 @@ export const updateProduct = async (req, res) => {
       return res.status(404).json({ success: false, message: "Product not found" });
     }
 
-    // ✅ تحقق واش المستخدم هو المالك أو admin
     if (product.seller.toString() !== req.user.id && req.user.role !== "admin") {
       return res.status(403).json({ success: false, message: "Not authorized" });
     }
@@ -86,7 +87,7 @@ export const updateProduct = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-// route: GET /api/products/user/:userId
+
 export const getProductsByUser = async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -96,5 +97,3 @@ export const getProductsByUser = async (req, res) => {
     res.status(500).json({ message: "Erreur lors de la récupération" });
   }
 };
-
-

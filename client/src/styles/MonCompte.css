@@ -115,21 +115,42 @@
   color: #111;
 }
 
-/* زر الحذف */
+/* زر الحذف والتعديل container */
+.product-item-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* أزرار الحذف والتعديل */
 .product-item button {
-  background-color: #e74c3c;
-  color: white;
+  flex: 1;
+  padding: 8px 12px;
   border: none;
-  padding: 8px 14px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: bold;
   transition: background 0.3s;
+  color: white;
 }
 
-.product-item button:hover {
+/* زر الحذف */
+.product-item button.delete-btn {
+  background-color: #e74c3c;
+}
+
+.product-item button.delete-btn:hover {
   background-color: #c0392b;
+}
+
+/* زر التعديل */
+.product-item button.edit-btn {
+  background-color: #3498db;
+}
+
+.product-item button.edit-btn:hover {
+  background-color: #2980b9;
 }
 
 /* 📱 Responsive */
@@ -155,5 +176,14 @@
 
   .user-info p {
     font-size: 0.95rem;
+  }
+
+  /* ازرار في عمود و بحجم كامل */
+  .product-item-buttons {
+    flex-direction: column;
+  }
+
+  .product-item button {
+    width: 100%;
   }
 }

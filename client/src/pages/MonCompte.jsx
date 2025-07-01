@@ -10,6 +10,9 @@ const MonCompte = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
+  const [editProduct, setEditProduct] = useState(null);
+  const [editForm, setEditForm] = useState({ title: '', price: '', image: null });
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -23,13 +26,11 @@ const MonCompte = () => {
         const decoded = jwtDecode(token);
         const userId = decoded.id || decoded._id;
 
-        // جلب بيانات المستخدم
         const userRes = await axios.get(`http://localhost:5000/api/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setUser(userRes.data);
 
-        // جلب المنتجات ديال المستخدم
         const productsRes = await axios.get(`http://localhost:5000/api/products/user/${userId}`);
         setMyProducts(productsRes.data);
       } catch (err) {
@@ -74,8 +75,55 @@ const MonCompte = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMyProducts(myProducts.filter(p => p._id !== productId));
+      setMessage("Produit supprimé avec succès !");
     } catch (err) {
       alert("Erreur lors de la suppression du produit.");
+    }
+  };
+
+  const handleEditClick = (product) => {
+    setEditProduct(product);
+    setEditForm({ title: product.title, price: product.price, image: null });
+    setMessage('');
+    setError('');
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm({ ...editForm, [name]: value });
+  };
+
+  const handleEditImageChange = (e) => {
+    const file = e.target.files[0];
+    setEditForm((prev) => ({ ...prev, image: file }));
+  };
+
+  const submitEdit = async () => {
+    if (!editProduct) return;
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('title', editForm.title);
+      formData.append('price', editForm.price);
+      if (editForm.image) {
+        formData.append('image', editForm.image);
+      }
+
+      const res = await axios.put(`http://localhost:5000/api/products/${editProduct._id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const updated = res.data.data;
+      setMyProducts(myProducts.map(p => p._id === updated._id ? updated : p));
+      setEditProduct(null);
+      setMessage("Produit modifié avec succès !");
+      setError('');
+    } catch (err) {
+      setError("Erreur lors de la modification du produit.");
+      setMessage('');
     }
   };
 
@@ -100,6 +148,7 @@ const MonCompte = () => {
         <p><strong>Email :</strong> {user.email}</p>
         <p><strong>Téléphone :</strong> {user.phone || 'Non renseigné'}</p>
         {message && <p className="success">{message}</p>}
+        {error && <p className="error">{error}</p>}
       </div>
 
       <div className="my-products">
@@ -115,7 +164,43 @@ const MonCompte = () => {
               <div>
                 <p><strong>{product.title}</strong></p>
                 <p>{product.price} MAD</p>
-                <button onClick={() => handleDelete(product._id)}>Supprimer</button>
+
+                <div className="product-item-buttons">
+                  <button
+                    className="delete-btn"
+                    onClick={() => handleDelete(product._id)}
+                  >
+                    Supprimer
+                  </button>
+                  <button
+                    className="edit-btn"
+                    onClick={() => handleEditClick(product)}
+                  >
+                    Modifier
+                  </button>
+                </div>
+
+                {editProduct && editProduct._id === product._id && (
+                  <div className="edit-form">
+                    <input
+                      type="text"
+                      name="title"
+                      value={editForm.title}
+                      onChange={handleEditChange}
+                      placeholder="Titre"
+                    />
+                    <input
+                      type="number"
+                      name="price"
+                      value={editForm.price}
+                      onChange={handleEditChange}
+                      placeholder="Prix"
+                    />
+                    <input type="file" onChange={handleEditImageChange} />
+                    <button onClick={submitEdit}>Enregistrer</button>
+                    <button onClick={() => setEditProduct(null)}>Annuler</button>
+                  </div>
+                )}
               </div>
             </div>
           ))

@@ -19,8 +19,10 @@ router.post('/upload-image', protect, upload.single('image'), (req, res) => {
 
 router.delete("/:id", protect, deleteProduct);
 
-router.put("/:id", protect, updateProduct);
+
 
 router.get("/user/:userId", getProductsByUser);
+
+router.put("/:id", protect, upload.single("image"), updateProduct);
 
 export default router;
