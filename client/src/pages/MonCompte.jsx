@@ -11,7 +11,7 @@ const MonCompte = () => {
   const [message, setMessage] = useState('');
 
   const [editProduct, setEditProduct] = useState(null);
-  const [editForm, setEditForm] = useState({ title: '', price: '', image: null });
+  const [editForm, setEditForm] = useState({ title: '', price: '', status: '', image: null });
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -83,7 +83,7 @@ const MonCompte = () => {
 
   const handleEditClick = (product) => {
     setEditProduct(product);
-    setEditForm({ title: product.title, price: product.price, image: null });
+    setEditForm({ title: product.title, price: product.price, status: product.status, image: null });
     setMessage('');
     setError('');
   };
@@ -105,6 +105,7 @@ const MonCompte = () => {
       const formData = new FormData();
       formData.append('title', editForm.title);
       formData.append('price', editForm.price);
+      formData.append('status', editForm.status);
       if (editForm.image) {
         formData.append('image', editForm.image);
       }
@@ -135,20 +136,28 @@ const MonCompte = () => {
     <div className="mon-compte-container">
       <h2>Mon Compte</h2>
 
-      <div className="user-info">
-        {user.image && (
-          <img
-            src={`http://localhost:5000${user.image}`}
-            alt="photo de profil"
-            className="user-image"
-          />
-        )}
-        <input type="file" onChange={handleImageChange} />
-        <p><strong>Nom :</strong> {user.name}</p>
-        <p><strong>Email :</strong> {user.email}</p>
-        <p><strong>Téléphone :</strong> {user.phone || 'Non renseigné'}</p>
-        {message && <p className="success">{message}</p>}
-        {error && <p className="error">{error}</p>}
+      <div className="user-info-card">
+        <div className="profile-section">
+          {user.image && (
+            <img
+              src={`http://localhost:5000${user.image}`}
+              alt="photo de profil"
+              className="user-image"
+            />
+          )}
+          <div className="upload-button-wrapper">
+            <label htmlFor="profile-upload" className="custom-upload-button">Changer la photo</label>
+            <input id="profile-upload" type="file" onChange={handleImageChange} />
+          </div>
+        </div>
+
+        <div className="info-section">
+          <p><strong>Nom :</strong> {user.name}</p>
+          <p><strong>Email :</strong> {user.email}</p>
+          <p><strong>Téléphone :</strong> {user.phone || 'Non renseigné'}</p>
+          {message && <p className="success">{message}</p>}
+          {error && <p className="error">{error}</p>}
+        </div>
       </div>
 
       <div className="my-products">
@@ -164,20 +173,16 @@ const MonCompte = () => {
               <div>
                 <p><strong>{product.title}</strong></p>
                 <p>{product.price} MAD</p>
+                <p>
+                  <strong>État :</strong>{' '}
+                  <span className={product.status === 'Disponible' ? 'status-disponible' : 'status-vendu'}>
+                    {product.status}
+                  </span>
+                </p>
 
                 <div className="product-item-buttons">
-                  <button
-                    className="delete-btn"
-                    onClick={() => handleDelete(product._id)}
-                  >
-                    Supprimer
-                  </button>
-                  <button
-                    className="edit-btn"
-                    onClick={() => handleEditClick(product)}
-                  >
-                    Modifier
-                  </button>
+                  <button className="delete-btn" onClick={() => handleDelete(product._id)}>Supprimer</button>
+                  <button className="edit-btn" onClick={() => handleEditClick(product)}>Modifier</button>
                 </div>
 
                 {editProduct && editProduct._id === product._id && (
@@ -196,6 +201,14 @@ const MonCompte = () => {
                       onChange={handleEditChange}
                       placeholder="Prix"
                     />
+                    <select
+                      name="status"
+                      value={editForm.status}
+                      onChange={handleEditChange}
+                    >
+                      <option value="Disponible">Disponible</option>
+                      <option value="Vendu">Vendu</option>
+                    </select>
                     <input type="file" onChange={handleEditImageChange} />
                     <button onClick={submitEdit}>Enregistrer</button>
                     <button onClick={() => setEditProduct(null)}>Annuler</button>

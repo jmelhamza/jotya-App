@@ -20,8 +20,9 @@ const Navbar = () => {
       <div className={`nav-links ${isOpen ? "open" : ""}`}>
         <li><Link to="/" onClick={() => setIsOpen(false)}>Accueil</Link></li>
         <li><Link to="/produits" onClick={() => setIsOpen(false)}>Produits</Link></li>
-        <li><Link to="/mon-compte" onClick={() => setIsOpen(false)}>Mon Compte</Link></li>
+        
         {token && <li><Link to="/ajouter-produit" onClick={() => setIsOpen(false)}>Ajouter un produit</Link></li>}
+        <li><Link to="/mon-compte" onClick={() => setIsOpen(false)}>Mon Compte</Link></li>
         {role === 'admin' && <li><Link to="/admin" onClick={() => setIsOpen(false)}>Dashboard</Link></li>}
         {!token ? (
           <li><Link to="/connexion" onClick={() => setIsOpen(false)}>Connexion</Link></li>

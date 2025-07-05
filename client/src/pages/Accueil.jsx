@@ -9,12 +9,10 @@ const Accueil = () => {
   const images = [bg1, bg2, bg3, bg4];
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // auto slide every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
     }, 5000);
-
     return () => clearInterval(interval);
   }, [images.length]);
 
@@ -41,17 +39,9 @@ const Accueil = () => {
       </div>
 
       <section className="hero">
-        <h1>Bienvenue à Jotiya</h1>
+        <h1 className="hero-title">JOTIYA</h1>
+        <p className="hero-subtitle">Transformez vos objets en trésors. Vendez en toute simplicité !</p>
         <a href="/produits" className="cta-button">Voir les produits</a>
-      </section>
-
-      <section className="how-it-works">
-        
-        <ul>
-          <li>📤 Déposez votre produit</li>
-          <li>🛍️ Parcourez les produits disponibles</li>
-          <li>📞 Contactez le vendeur via téléphone</li>
-        </ul>
       </section>
     </div>
   );
