@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import '../styles/Products.css';
+import { CartContext } from '../context/CartContext.jsx';
 
 const categories = [
   'Tous',
@@ -21,9 +22,9 @@ const Products = () => {
   const [filterCat, setFilterCat] = useState('Tous');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // الحالة الجديدة لتخزين الصورة المختارة
   const [selectedImage, setSelectedImage] = useState(null);
+
+  const { addToCart } = useContext(CartContext);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -71,20 +72,15 @@ const Products = () => {
                   src={`http://localhost:5000${product.image[0]}`}
                   alt={product.title}
                   className="product-image"
-                  onClick={() => setSelectedImage(`http://localhost:5000${product.image[0]}`)} // هنا الصورة قابلة للنقر
-                  style={{ cursor: 'pointer' }} // مؤشر يد للمستخدم
+                  onClick={() => setSelectedImage(`http://localhost:5000${product.image[0]}`)}
+                  style={{ cursor: 'pointer' }}
                 />
               )}
               <h3>{product.title}</h3>
-
-              {/* Description */}
               <p>{product.description}</p>
-
               <p className="price">{product.price} MAD</p>
-
               <p className="category"><strong>Catégorie :</strong> {product.category}</p>
 
-              {/* Seller info */}
               {product.seller ? (
                 <p>
                   Publié par: <a href={`/vendeur/${product.seller._id}`}>{product.seller.name}</a>
@@ -99,6 +95,13 @@ const Products = () => {
                   {product.status}
                 </span>
               </p>
+
+              {/* ✅ زر إضافة إلى السلة */}
+              {product.status === 'Disponible' && (
+                <button className="add-to-cart-btn" onClick={() => addToCart(product)}>
+                  Ajouter au panier
+                </button>
+              )}
             </div>
           ))
         )}

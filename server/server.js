@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.router.js';
 import cors from "cors"
 import fs from 'fs';
 import path from 'path'
+import paypalRoutes from './routes/paypal.routes.js'
 
 dotenv.config();
 
@@ -22,7 +23,7 @@ if (!fs.existsSync(uploadDir)) {
 const PORT = process.env.PORT || 5000
 
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
-
+app.use('/api/paypal', paypalRoutes);
 app.use(express.json());
 
 app.use("/api/products", productRoutes);

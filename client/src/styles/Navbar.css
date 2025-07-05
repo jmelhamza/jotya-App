@@ -90,6 +90,7 @@
     position: absolute;
     top: 60px; /* ارتفاع النافبار */
     right: 0;
+    left: 0; /* اجعل القائمة تمتد عبر العرض كاملا */
     background-color: #292f36;
     flex-direction: column;
     width: 100%;
@@ -101,17 +102,23 @@
     border-radius: 0 0 8px 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     padding-left: 0;
+    z-index: 1000; /* مهم */
   }
 
   .nav-links.open {
-    max-height: 300px; /* أو قيمة كافية لكل الروابط */
+    max-height: 500px; /* زيادة قيمة لتتسع كل العناصر */
     opacity: 1;
     pointer-events: auto;
-    padding: 15px 20px;
+    padding: 15px 0;
   }
 
   .nav-links li {
     margin: 12px 0;
     text-align: center;
+  }
+
+  .nav-links li a {
+    display: block;
+    padding: 10px 20px;
   }
 }
