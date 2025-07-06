@@ -4,7 +4,11 @@ import mongoose from "mongoose";
 // ✅ Get all products
 export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find().populate('seller', 'name email');
+    const products = await Product.find()
+  .sort({ createdAt: -1 }) // 👈 الترتيب تنازلي حسب تاريخ الإنشاء
+  .populate('seller', 'name email role');
+
+
     res.status(200).json({ success: true, data: products });
   } catch (error) {
     console.error('error in fetching products', error.message);

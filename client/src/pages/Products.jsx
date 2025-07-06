@@ -96,8 +96,8 @@ const Products = () => {
                 </span>
               </p>
 
-              {/* ✅ زر إضافة إلى السلة */}
-              {product.status === 'Disponible' && (
+              {/* ✅ زر إضافة إلى السلة فقط إذا كان البائع admin */}
+              {product.status === 'Disponible' && product.seller?.role === 'admin' && (
                 <button className="add-to-cart-btn" onClick={() => addToCart(product)}>
                   Ajouter au panier
                 </button>
