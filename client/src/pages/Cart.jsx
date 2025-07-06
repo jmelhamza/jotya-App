@@ -1,4 +1,3 @@
-// Cart.jsx
 import React, { useContext } from 'react';
 import { CartContext } from '../context/CartContext.jsx';
 import { PayPalButtons } from '@paypal/react-paypal-js';
@@ -6,6 +5,8 @@ import '../styles/Cart.css';
 
 const Cart = () => {
   const { cartItems, removeFromCart, totalPrice } = useContext(CartContext);
+  const exchangeRate = 0.1; // 💵 1 MAD ≈ 0.1 USD (يمكنك تحديثه حسب السوق)
+  const totalUSD = (totalPrice * exchangeRate).toFixed(2);
 
   return (
     <div className="cart-container">
@@ -32,6 +33,7 @@ const Cart = () => {
 
           <div className="cart-total">
             <h3>Total : {totalPrice} MAD</h3>
+            <h4>À payer (USD): {totalUSD} $</h4>
 
             {/* ✅ PayPal button */}
             <PayPalButtons
@@ -40,7 +42,8 @@ const Cart = () => {
                 return actions.order.create({
                   purchase_units: [{
                     amount: {
-                      value: totalPrice.toString()
+                      value: totalUSD,
+                      currency_code: "USD" // 🧠 ضروري تحديد العملة
                     }
                   }]
                 });
