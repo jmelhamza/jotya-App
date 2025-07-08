@@ -12,6 +12,7 @@ import SellerProfile from './pages/SellerProfile';
 import MonCompte from './pages/MonCompte';
 import Accueil from './pages/Accueil';
 import Cart from './pages/Cart.jsx'
+import About from './pages/About'
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
         <Route path="vendeur/:id" element={<SellerProfile />} />
         <Route path="mon-compte" element={<MonCompte />} />
         <Route path="panier" element={<Cart />} />
+        <Route path="/a-propos" element={<About />} />
       </Route>
     </Routes>
   );

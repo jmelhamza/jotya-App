@@ -1,15 +1,15 @@
 import React from 'react';
 import '../styles/Footer.css';
-
+import { Link } from 'react-router-dom';
 const Footer = () => {
   return (
     <footer className="footer">
       <p className="footer-title">Jotiya - Votre marché aux puces en ligne</p>
       <div className="footer-links">
-        <a href="/">Accueil</a> • 
-        <a href="/produits">Produits</a> • 
-        <a href="/ajouter-produit">Ajouter un produit</a> • 
-        <a href="/contact">Contact</a>
+        
+         <li><Link to="/a-propos" onClick={() => setIsOpen(false)}>À propos</Link></li>
+        
+
       </div>
       <div className="footer-social">
         <a href="https://facebook.com" target="_blank">Facebook</a> – 

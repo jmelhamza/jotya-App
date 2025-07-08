@@ -27,6 +27,7 @@ const Navbar = () => {
         
 
         <li><Link to="/mon-compte" onClick={() => setIsOpen(false)}>Mon Compte</Link></li>
+       
         
         {role === 'admin' && <li><Link to="/admin" onClick={() => setIsOpen(false)}>Dashboard</Link></li>}
         {!token ? (
