@@ -2,13 +2,13 @@
 
 Welcome to **Jotya**, a web platform designed to facilitate the sale and purchase of second-hand and scrap products, especially those commonly found in flea markets (Marché aux puces).
 
-🌐 **Live site:** [www.jotya.com](http://www.jotya.com)
+🌐 **Live site:** [www.jotya.com](http://www.jotya.com).
 
 ---
 
-## 📌 Table of Contents
+## 📌 Table of Contents..
 
-- [Project Description](#-project-description)
+- [Project Description](#-project-description)S
 - [Target Users](#-target-users)
 - [Features](#-features)
 - [How It Works](#-how-it-works)
@@ -97,4 +97,3 @@ npm run dev
 cd ../client
 npm install
 npm start
-.
