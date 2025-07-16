@@ -2,9 +2,10 @@
   "name": "jotiyaapp",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "dev": " nodemon server/server.js "
-  },
+ "scripts": {
+  "start": "node server/server.js",
+  "dev": "nodemon server/server.js"
+},
   "type": "module",
   "keywords": [],
   "author": "",
