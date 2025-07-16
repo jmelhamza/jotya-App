@@ -3,6 +3,9 @@ import axios from 'axios';
 import '../styles/Products.css';
 import { CartContext } from '../context/CartContext.jsx';
 
+// ✅ أضف هذا السطر في الأعلى لاستخدام المتغير البيئي
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 const categories = [
   'Tous',
   'Electronique',
@@ -29,7 +32,8 @@ const Products = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/products');
+        // ✅ تم تعديل هذا السطر لاستخدام الرابط الأساسي الديناميكي
+        const res = await axios.get(`${API_BASE_URL}/api/products`);
         setProducts(res.data.data);
       } catch (err) {
         setError('Erreur lors du chargement des produits');
@@ -69,10 +73,12 @@ const Products = () => {
             <div key={product._id} className="product-card">
               {product.image && product.image.length > 0 && (
                 <img
-                  src={`http://localhost:5000${product.image[0]}`}
+                  // ✅ تم تعديل رابط الصورة الأول
+                  src={`${API_BASE_URL}${product.image[0]}`}
                   alt={product.title}
                   className="product-image"
-                  onClick={() => setSelectedImage(`http://localhost:5000${product.image[0]}`)}
+                  // ✅ تم تعديل رابط الصورة الثاني
+                  onClick={() => setSelectedImage(`${API_BASE_URL}${product.image[0]}`)}
                   style={{ cursor: 'pointer' }}
                 />
               )}
@@ -96,7 +102,6 @@ const Products = () => {
                 </span>
               </p>
 
-              {/* ✅ زر إضافة إلى السلة فقط إذا كان البائع admin */}
               {product.status === 'Disponible' && product.seller?.role === 'admin' && (
                 <button className="add-to-cart-btn" onClick={() => addToCart(product)}>
                   Ajouter au panier
@@ -107,7 +112,6 @@ const Products = () => {
         )}
       </div>
 
-      {/* Popup الصورة الكبيرة */}
       {selectedImage && (
         <div className="image-popup" onClick={() => setSelectedImage(null)}>
           <button className="close-button" onClick={() => setSelectedImage(null)}>Fermer ✖</button>

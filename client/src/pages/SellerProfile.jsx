@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
 
+// ✅ أضف هذا السطر في الأعلى لاستخدام المتغير البيئي
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 const SellerProfile = () => {
   const { id } = useParams();
   const [seller, setSeller] = useState(null);
@@ -11,7 +14,8 @@ const SellerProfile = () => {
   useEffect(() => {
     const fetchSeller = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/users/${id}`);
+        // ✅ تم تعديل رابط API
+        const res = await axios.get(`${API_BASE_URL}/api/users/${id}`);
         setSeller(res.data);
       } catch (err) {
         setError('Erreur lors de la récupération des données du vendeur');
@@ -29,7 +33,8 @@ const SellerProfile = () => {
     <div style={{ maxWidth: '500px', margin: 'auto', padding: '1rem', textAlign: 'center' }}>
       {seller.image ? (
         <img
-          src={`http://localhost:5000${seller.image}`}
+          // ✅ تم تعديل رابط الصورة
+          src={`${API_BASE_URL}${seller.image}`}
           alt={seller.name}
           style={{
             width: '150px',
@@ -60,7 +65,6 @@ const SellerProfile = () => {
       <h2>Profil de {seller.name}</h2>
       <p><strong>Email :</strong> {seller.email}</p>
       <p><strong>Téléphone :</strong> {seller.phone ? seller.phone : 'Non renseigné'}</p>
-      {/* يمكن تزيد معلومات إضافية هنا */}
     </div>
   );
 };

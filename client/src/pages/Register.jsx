@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import '../styles/Register.css';
 import jotiyaLogo from '../assets/jotiya-logo.png';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; // ✅
+import { useNavigate } from 'react-router-dom';
+
+// ✅ أضف هذا السطر في الأعلى لاستخدام المتغير البيئي
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -14,7 +17,7 @@ const Register = () => {
 
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');
-  const navigate = useNavigate(); // ✅
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -41,13 +44,13 @@ const Register = () => {
 
     if (Object.keys(validationErrors).length === 0) {
       try {
-        const response = await axios.post('http://localhost:5000/api/auth/register', formData);
-        setMessage('Inscription réussie ! Vous pouvez maintenant vous connecter.');
+        // ✅ تم تعديل هذا السطر لاستخدام الرابط الأساسي الديناميكي
+        const response = await axios.post(`${API_BASE_URL}/api/auth/register`, formData);
+        setMessage('Inscription réussie ! Vous pouvez الآن vous connecter.');
 
-        // ✅ التوجيه لصفحة تسجيل الدخول
         setTimeout(() => {
           navigate("/connexion");
-        }, 1500); // بعد ثانية واحدة
+        }, 1500); 
 
       } catch (error) {
         setMessage('Erreur lors de l\'inscription.');

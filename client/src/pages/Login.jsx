@@ -4,6 +4,10 @@ import jotiyaLogo from '../assets/jotiya-logo.png';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
+// ✅ أضف هذا السطر في الأعلى لاستخدام المتغير البيئي
+// سيتم تحديد قيمة هذا المتغير من ملف .env.development أو .env.production
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 const Login = () => {
   const navigate = useNavigate();
 
@@ -30,14 +34,13 @@ const Login = () => {
 
     if (Object.keys(validationErrors).length === 0) {
       try {
-        const res = await axios.post('http://localhost:5000/api/auth/login', formData);
+        // ✅ تم تعديل هذا السطر لاستخدام الرابط الأساسي الديناميكي
+        const res = await axios.post(`${API_BASE_URL}/api/auth/login`, formData);
+
         const token= res.data.token;
-
-        localStorage.setItem('token', res.data.token); // ✅ هذا هو الصحيح
-
- // ✅ حفظ التوكن
+        localStorage.setItem('token', res.data.token);
         setMessage("Connexion réussie !");
-        navigate('/'); // ✅ توجيه إلى Accueil
+        navigate('/'); 
       } catch (err) {
         console.error(err);
         setMessage("Email ou mot de passe incorrect.");

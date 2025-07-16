@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import '../styles/AdminDashboard.css';
 
+// ✅ أضف هذا السطر في الأعلى لاستخدام المتغير البيئي
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -16,7 +19,8 @@ const AdminDashboard = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/users', {
+      // ✅ تم تعديل رابط API الأول
+      const res = await axios.get(`${API_BASE_URL}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data);
@@ -27,7 +31,8 @@ const AdminDashboard = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/products');
+      // ✅ تم تعديل رابط API الثاني
+      const res = await axios.get(`${API_BASE_URL}/api/products`);
       setProducts(res.data.data);
     } catch (err) {
       console.error('Erreur produits:', err);
@@ -36,7 +41,8 @@ const AdminDashboard = () => {
 
   const deleteUser = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/users/${id}`, {
+      // ✅ تم تعديل رابط API الثالث
+      await axios.delete(`${API_BASE_URL}/api/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessage('Utilisateur supprimé');
@@ -48,7 +54,8 @@ const AdminDashboard = () => {
 
   const deleteProduct = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/products/${id}`, {
+      // ✅ تم تعديل رابط API الرابع
+      await axios.delete(`${API_BASE_URL}/api/products/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessage('Produit supprimé');

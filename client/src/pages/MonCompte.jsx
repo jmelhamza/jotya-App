@@ -3,6 +3,9 @@ import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import '../styles/MonCompte.css';
 
+// ✅ أضف هذا السطر في الأعلى لاستخدام المتغير البيئي
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 const MonCompte = () => {
   const [user, setUser] = useState(null);
   const [myProducts, setMyProducts] = useState([]);
@@ -26,12 +29,14 @@ const MonCompte = () => {
         const decoded = jwtDecode(token);
         const userId = decoded.id || decoded._id;
 
-        const userRes = await axios.get(`http://localhost:5000/api/users/${userId}`, {
+        // ✅ تعديل رابط API الأول
+        const userRes = await axios.get(`${API_BASE_URL}/api/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setUser(userRes.data);
 
-        const productsRes = await axios.get(`http://localhost:5000/api/products/user/${userId}`);
+        // ✅ تعديل رابط API الثاني
+        const productsRes = await axios.get(`${API_BASE_URL}/api/products/user/${userId}`);
         setMyProducts(productsRes.data);
       } catch (err) {
         setError('Erreur lors de la récupération des données utilisateur.');
@@ -52,7 +57,8 @@ const MonCompte = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.put('http://localhost:5000/api/users/upload-profile', formData, {
+      // ✅ تعديل رابط API الثالث
+      await axios.put(`${API_BASE_URL}/api/users/upload-profile`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`
@@ -71,7 +77,8 @@ const MonCompte = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/products/${productId}`, {
+      // ✅ تعديل رابط API الرابع
+      await axios.delete(`${API_BASE_URL}/api/products/${productId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMyProducts(myProducts.filter(p => p._id !== productId));
@@ -110,7 +117,8 @@ const MonCompte = () => {
         formData.append('image', editForm.image);
       }
 
-      const res = await axios.put(`http://localhost:5000/api/products/${editProduct._id}`, formData, {
+      // ✅ تعديل رابط API الخامس
+      const res = await axios.put(`${API_BASE_URL}/api/products/${editProduct._id}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,
@@ -139,8 +147,9 @@ const MonCompte = () => {
       <div className="user-info-card">
         <div className="profile-section">
           {user.image && (
+            // ✅ تعديل رابط الصورة الأول
             <img
-              src={`http://localhost:5000${user.image}`}
+              src={`${API_BASE_URL}${user.image}`}
               alt="photo de profil"
               className="user-image"
             />
@@ -168,7 +177,8 @@ const MonCompte = () => {
           myProducts.map((product) => (
             <div key={product._id} className="product-item">
               {product.image && product.image[0] && (
-                <img src={`http://localhost:5000${product.image[0]}`} alt={product.title} />
+                // ✅ تعديل رابط الصورة الثاني
+                <img src={`${API_BASE_URL}${product.image[0]}`} alt={product.title} />
               )}
               <div>
                 <p><strong>{product.title}</strong></p>

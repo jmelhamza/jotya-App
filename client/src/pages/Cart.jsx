@@ -3,6 +3,9 @@ import { CartContext } from '../context/CartContext.jsx';
 import { PayPalButtons } from '@paypal/react-paypal-js';
 import '../styles/Cart.css';
 
+// ✅ أضف هذا السطر في الأعلى لاستخدام المتغير البيئي
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 const Cart = () => {
   const { cartItems, removeFromCart, totalPrice } = useContext(CartContext);
   const exchangeRate = 0.1; // 💵 1 MAD ≈ 0.1 USD (يمكنك تحديثه حسب السوق)
@@ -19,7 +22,8 @@ const Cart = () => {
           {cartItems.map(item => (
             <div key={item._id} className="cart-item">
               <img
-                src={`http://localhost:5000${item.image[0]}`}
+                // ✅ تم تعديل رابط الصورة
+                src={`${API_BASE_URL}${item.image[0]}`}
                 alt={item.title}
                 className="cart-item-image"
               />

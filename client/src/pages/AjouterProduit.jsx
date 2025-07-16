@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import "../styles/AjouterProduit.css"
 
+// ✅ أضف هذا السطر في الأعلى لاستخدام المتغير البيئي
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 const categories = [
   { value: 'Electronique', label: 'Électronique' },
   { value: 'Vetements', label: 'Vêtements' },
@@ -54,7 +57,8 @@ const AjouterProduit = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/products', formData, {
+      // ✅ تم تعديل هذا السطر لاستخدام الرابط الأساسي الديناميكي
+      await axios.post(`${API_BASE_URL}/api/products`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,
@@ -110,7 +114,6 @@ const AjouterProduit = () => {
         <option value="Vendu">Vendu</option>
       </select>
 
-      {/* هادي هي إضافة اختيار الفئة */}
       <select
         name="category"
         value={form.category}

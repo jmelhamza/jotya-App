@@ -20,9 +20,30 @@ if (!fs.existsSync(uploadDir)) {
   console.log("Dossier 'uploads' créé.");
 }
 
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 5000;
 
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+// ✅ إعداد CORS للسماح بالوصول من مختلف الروابط
+const allowedOrigins = [
+  'http://localhost:5173', // رابط التطوير المحلي
+  'https://jotya.xyz', // رابط نطاقك الأساسي
+  'https://www.jotiya.xyz', // رابط نطاقك مع www
+  // قم بإضافة رابط مشروعك على Vercel هنا
+  // ستجده في إعدادات Vercel > Domains
+  'https://jotya-app-git-main-jmelhamzas-projects.vercel.app', 
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use('/api/paypal', paypalRoutes);
 app.use(express.json());
 
@@ -34,6 +55,6 @@ app.use('/api/auth', authRoutes);
 app.use('/uploads', express.static('uploads'));
 
 app.listen(PORT, () => {
-    connectDB()
+  connectDB();
   console.log(`Server is running on port ${PORT}`);
 });
