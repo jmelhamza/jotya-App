@@ -10,9 +10,17 @@ const Accueil = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
+    // ✅ التحميل المسبق للصور
+    images.forEach(image => {
+      const img = new Image();
+      img.src = image;
+    });
+
+    // ✅ تشغيل السلايدر
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
     }, 5000);
+
     return () => clearInterval(interval);
   }, [images.length]);
 

@@ -98,31 +98,42 @@
   text-decoration: underline;
 }
 
-/* ✅ Responsive pour mobile */
+/* ✅ تحسين الجزء الـ Responsive للهواتف */
 @media (max-width: 768px) {
   .register-container {
-    flex-direction: column;
+    flex-direction: column; /* ⬅️ هذا هو ما يجعل المحتوى يترتب فوق بعضه */
   }
 
   .register-left {
-    display: none; /* ❌ إخفاء الصورة تماما */
+    display: none; /* إخفاء الصورة تماماً لتوفير مساحة على الهاتف */
   }
 
   .register-right {
     width: 100%;
-    padding: 2rem 1rem;
+    /* تقليل الـ padding ليصبح ملائماً للهواتف */
+    padding: 2rem 1.5rem;
+  }
+
+  .register-right h2 {
+    font-size: 1.75rem; /* تصغير العنوان قليلاً */
   }
 
   .register-form {
     max-width: 100%;
-    width: 100%;
+    /* تقليل المسافات بين الحقول قليلاً */
+    gap: 0.75rem;
   }
 
   .register-form input,
   .register-form button {
-    font-size: 16px;
+    /* تعديل حجم الخط والـ padding ليكون مريحاً على الهاتف */
+    font-size: 15px;
     padding: 12px;
     border-radius: 6px;
+  }
+
+  .register-right p {
+    font-size: 13px; /* تصغير حجم الخط ليكون أكثر ملائمة */
   }
 }
 .error {
@@ -131,4 +142,3 @@
   margin-top: -10px;
   margin-bottom: 10px;
 }
-

@@ -90,7 +90,7 @@
     position: absolute;
     top: 60px; /* ارتفاع النافبار */
     right: 0;
-    left: 0; /* اجعل القائمة تمتد عبر العرض كاملا */
+    left: 0;
     background-color: #292f36;
     flex-direction: column;
     width: 100%;
@@ -102,23 +102,27 @@
     border-radius: 0 0 8px 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     padding-left: 0;
-    z-index: 1000; /* مهم */
+    z-index: 1000;
   }
 
   .nav-links.open {
-    max-height: 500px; /* زيادة قيمة لتتسع كل العناصر */
+    max-height: 500px;
     opacity: 1;
     pointer-events: auto;
     padding: 15px 0;
+    overflow-y: auto; /* ✅ إضافة هذا السطر للسماح بالتمرير إذا كانت القائمة طويلة */
   }
 
   .nav-links li {
     margin: 12px 0;
     text-align: center;
+    box-sizing: border-box; /* ✅ تأكد من أن العناصر تتكيف مع العرض */
+    width: 100%; /* ✅ تأكد من أن كل عنصر يملأ العرض */
   }
 
   .nav-links li a {
     display: block;
     padding: 10px 20px;
+    width: 100%; /* ✅ تأكد من أن الرابط يملأ مساحة العنصر */
   }
 }
