@@ -2,10 +2,10 @@
   "name": "jotiyaapp",
   "version": "1.0.0",
   "main": "index.js",
- "scripts": {
-  "start": "node server/server.js",
-  "dev": "nodemon server/server.js"
-},
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js"
+  },
   "type": "module",
   "keywords": [],
   "author": "",
@@ -15,6 +15,8 @@
     "nodemon": "^3.1.10"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^7.0.0",
+    "@fortawesome/react-fontawesome": "^0.2.3",
     "@paypal/checkout-server-sdk": "^1.0.3",
     "@paypal/react-paypal-js": "^8.8.3",
     "bcrypt": "^6.0.0",

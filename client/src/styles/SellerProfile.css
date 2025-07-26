@@ -1,81 +1,112 @@
+/* client/src/styles/SellerProfile.css */
+
+/*
+  هذا الكود يقوم بتنسيق الصفحة بالكامل
+  وجعلها تبدو كـ "Card" أو بطاقة أنيقة
+*/
 .seller-profile-container {
-  max-width: 900px;
-  margin: 20px auto;
-  padding: 15px;
+  max-width: 600px; /* تحديد عرض أقصى للبطاقة */
+  margin: 2rem auto; /* توسيط البطاقة في منتصف الصفحة */
+  padding: 2.5rem; /* مساحة داخلية كبيرة */
+  text-align: center; /* توسيط كل المحتوى داخل البطاقة */
+  background-color: #fff; /* خلفية بيضاء */
+  border-radius: 12px; /* حواف دائرية */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); /* ظل خفيف لإبراز البطاقة */
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
 }
 
-.seller-info {
-  text-align: center;
-  margin-bottom: 30px;
+/* تنسيق صورة البروفايل */
+.profile-image {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%; /* لجعلها دائرية بالكامل */
+  object-fit: cover; /* لضمان عدم تشوه الصورة */
+  margin-bottom: 1.5rem;
+  border: 4px solid #f97316; /* إطار برتقالي بارز */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.seller-info h2 {
-  font-size: 2rem;
-  margin-bottom: 10px;
-}
-
-.seller-info p {
-  font-size: 1.1rem;
-  margin-bottom: 10px;
-}
-
-.seller-image {
-  width: 120px;
-  height: 120px;
+/* تنسيق الحرف الأول إذا لم توجد صورة */
+.profile-placeholder {
+  width: 150px;
+  height: 150px;
   border-radius: 50%;
-  object-fit: cover;
-  margin-top: 10px;
+  background-color: #ddd;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  font-size: 3rem;
+  color: #666;
+  border: 4px solid #f97316;
 }
 
-.seller-products h3 {
-  margin-bottom: 20px;
-  font-size: 1.5rem;
-  border-bottom: 2px solid #333;
-  padding-bottom: 5px;
-}
-
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill,minmax(200px,1fr));
-  gap: 20px;
-}
-
-.product-card {
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 10px;
-  transition: box-shadow 0.3s ease;
-  background-color: #fafafa;
-}
-
-.product-card:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-
-.product-image {
-  width: 100%;
-  height: 140px;
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-.product-card h4 {
-  margin: 10px 0 5px;
-  font-size: 1.1rem;
-}
-
-.product-card p {
-  font-size: 0.9rem;
-  color: #555;
-}
-
-.price {
-  font-weight: bold;
-  margin-top: 8px;
+/* تنسيق العناوين والفقرات */
+h2 {
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
   color: #2c3e50;
 }
-img {
-  border-radius: 50%;
-  object-fit: cover;
+
+p {
+  font-size: 1.1rem;
+  color: #555;
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+strong {
+  color: #f97316;
+}
+
+/* تنسيق قسم روابط التواصل الاجتماعي */
+.social-media-links {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eee; /* خط فاصل بسيط */
+  display: flex;
+  justify-content: center;
+  gap: 25px; /* المسافة بين الروابط */
+}
+
+/* تنسيق الروابط النصية */
+.social-media-links a {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #555; /* لون رمادي هادئ */
+  text-decoration: none;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.social-media-links a:hover {
+  color: #f97316; /* يتغير اللون إلى البرتقالي عند مرور الفأرة */
+  transform: translateY(-2px); /* تأثير خفيف للتحريك للأعلى */
+}
+
+/* ✅ هذا الجزء خاص بالهواتف المحمولة والشاشات الصغيرة */
+@media (max-width: 600px) {
+  .seller-profile-container {
+    margin: 1rem; /* تقليل المسافة الخارجية */
+    padding: 1.5rem; /* تقليل المسافة الداخلية */
+  }
+
+  .profile-image,
+  .profile-placeholder {
+    width: 120px; /* تصغير حجم الصورة */
+    height: 120px;
+  }
+
+  h2 {
+    font-size: 1.8rem; /* تصغير حجم العنوان */
+  }
+
+  p {
+    font-size: 1rem; /* تصغير حجم الخط */
+  }
+
+  .social-media-links {
+    flex-direction: column; /* جعل الروابط تظهر فوق بعضها */
+    gap: 10px; /* تقليل المسافة بين الروابط */
+  }
 }

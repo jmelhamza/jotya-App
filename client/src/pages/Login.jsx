@@ -3,13 +3,13 @@ import '../styles/Login.css';
 import jotiyaLogo from '../assets/jotiya-logo.png';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; // 👈 أضفنا هذا الاستيراد
 
-// ✅ أضف هذا السطر في الأعلى لاستخدام المتغير البيئي
-// سيتم تحديد قيمة هذا المتغير من ملف .env.development أو .env.production
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth(); // 👈 استخدام الهوك الجديد
 
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
@@ -34,11 +34,12 @@ const Login = () => {
 
     if (Object.keys(validationErrors).length === 0) {
       try {
-        // ✅ تم تعديل هذا السطر لاستخدام الرابط الأساسي الديناميكي
         const res = await axios.post(`${API_BASE_URL}/api/auth/login`, formData);
+        const token = res.data.token;
+        
+        // استخدام دالة login من الـ Context لتخزين التوكن
+        login(token); 
 
-        const token= res.data.token;
-        localStorage.setItem('token', res.data.token);
         setMessage("Connexion réussie !");
         navigate('/'); 
       } catch (err) {
@@ -77,7 +78,7 @@ const Login = () => {
 
           <button type="submit">Se connecter</button>
         </form>
-        <p>Pas de compte ? <a href="/inscription">S'inscrire</a></p>
+        {/* ✅ تم حذف رابط التسجيل */}
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+// server/routes/product.routes.js
 import express from 'express';
 import {
   createProduct,
@@ -9,14 +10,14 @@ import {
 
 import { protect } from '../middlewares/auth.middleware.js';
 import upload from '../middlewares/upload.middleware.js';
+import { isAdmin } from '../middlewares/isAdmin.middlewear.js';
 
 const router = express.Router();
 
-router.get("/", getProducts);
+router.get("/", getProducts); // 👈 ✅ هذا المسار متاح للجميع بدون `protect`
 
-router.post("/", protect, upload.array('image', 5), createProduct);
-
-router.post('/upload-image', protect, upload.single('image'), (req, res) => {
+router.post("/", protect, isAdmin, upload.array('image', 5), createProduct); // 👈 إضافة `isAdmin`
+router.post('/upload-image', protect, isAdmin, upload.single('image'), (req, res) => { // 👈 إضافة `isAdmin`
   if (!req.file) {
     return res.status(400).json({ message: 'Aucune image téléchargée' });
   }
@@ -24,10 +25,10 @@ router.post('/upload-image', protect, upload.single('image'), (req, res) => {
   res.status(200).json({ imageUrl });
 });
 
-router.get("/user/:userId", getProductsByUser);
+router.get("/user/:userId", getProductsByUser); // 👈 هذا المسار قد يحتاج إلى حماية معينة (سنتجاهله الآن)
 
-router.put("/:id", protect, upload.array("image", 5), updateProduct);
+router.put("/:id", protect, isAdmin, upload.array("image", 5), updateProduct); // 👈 إضافة `isAdmin`
 
-router.delete("/:id", protect, deleteProduct);
+router.delete("/:id", protect, isAdmin, deleteProduct); // 👈 إضافة `isAdmin`
 
-export default router
+export default router;
