@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مترجم بتصميم خاص</title>
+    
+    <style>
+        :root {
+            --primary-color: #1a73e8;
+            --primary-light: #e8f0fe;
+            --background-color: #ffffff;
+            --card-color: #ffffff;
+            --border-color: #dadce0;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --mic-color: #ea4335; 
+            --hover-color: #f8f9fa;
+            --shadow: 0 1px 6px rgba(32, 33, 36, 0.28);
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Noto Sans', Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            padding: 20px;
+            direction: rtl;
+            line-height: 1.5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: var(--card-color);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
+        .translation-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panels-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .panels-container {
+                flex-direction: column;
+            }
+        }
+
+        .input-panel, .output-panel {
+            flex: 1;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--card-color);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--hover-color);
+        }
+
+        .lang-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .lang-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
+            outline: none;
+        }
+
+        select:focus {
+            border-color: var(--primary-color);
+        }
+
+        .text-container {
+            position: relative;
+            min-height: 180px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 180px;
+            padding: 16px;
+            border: none;
+            resize: none;
+            box-sizing: border-box;
+            font-size: 16px;
+            text-align: right;
+            outline: none;
+            background: transparent;
+            font-family: inherit;
+        }
+
+        .mic-button {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background-color: transparent;
+            color: var(--text-secondary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+
+        .mic-button:hover {
+            background-color: var(--hover-color);
+        }
+
+        .mic-button.recording {
+            color: var(--mic-color);
+            animation: pulse 1.5s infinite;
+        }
+
+        .middle-separator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .swap-button {
+            background-color: var(--primary-color);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .swap-button:hover {
+            background-color: #0d62d3;
+        }
+
+        #loading {
+            color: var(--primary-color);
+            font-weight: 500;
+            display: none;
+            padding: 10px;
+        }
+
+        .output-panel {
+            padding: 0;
+        }
+
+        .results-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .lang-output {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .lang-output:last-child {
+            border-bottom: none;
+        }
+
+        .lang-output:hover {
+            background-color: var(--hover-color);
+        }
+
+        .lang-label-output {
+            font-size: 14px;
+            color: var(--text-secondary);
+            min-width: 80px;
+            margin-top: 2px;
+        }
+
+        .translation-content {
+            flex-grow: 1;
+        }
+
+        .translation-text {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .audio-button {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+
+        .audio-button:hover {
+            background-color: var(--hover-color);
+            color: var(--primary-color);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(234, 67, 53, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(234, 67, 53, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(234, 67, 53, 0); }
+        }
+
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo">المترجم</div>
+        </div>
+        
+        <div class="translation-area">
+            <div class="panels-container">
+                <div class="input-panel">
+                    <div class="panel-header">
+                        <div class="lang-selector">
+                            <span class="lang-label">لغة الإدخال:</span>
+                            <select id="sourceLang" onchange="debounceTranslation()">
+                                <option value="ar">العربية</option>
+                                <option value="fr">الفرنسية</option>
+                                <option value="en">الإنجليزية</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="text-container">
+                        <textarea id="sourceText" placeholder="اكتب النص هنا..." oninput="debounceTranslation()"></textarea>
+                        <button id="micButton" class="mic-button" onclick="toggleRecording()">🎤</button>
+                    </div>
+                </div>
+
+                <div class="output-panel">
+                    <div class="panel-header">
+                        <div class="lang-selector">
+                            <span class="lang-label">الترجمة:</span>
+                        </div>
+                    </div>
+                    
+                    <div class="results-container">
+                        <div id="output_ar_box" class="lang-output">
+                            <div class="lang-label-output">العربية</div>
+                            <div class="translation-content">
+                                <span id="output_ar" class="translation-text"></span>
+                            </div>
+                            <button class="audio-button" onclick="speakText('output_ar', 'ar-SA')">🔊</button>
+                        </div>
+                        
+                        <div id="output_fr_box" class="lang-output">
+                            <div class="lang-label-output">الفرنسية</div>
+                            <div class="translation-content">
+                                <span id="output_fr" class="translation-text"></span>
+                            </div>
+                            <button class="audio-button" onclick="speakText('output_fr', 'fr-FR')">🔊</button>
+                        </div>
+                        
+                        <div id="output_en_box" class="lang-output">
+                            <div class="lang-label-output">الإنجليزية</div>
+                            <div class="translation-content">
+                                <span id="output_en" class="translation-text"></span>
+                            </div>
+                            <button class="audio-button" onclick="speakText('output_en', 'en-US')">🔊</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="middle-separator">
+                <p id="loading">...جاري الترجمة</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            تم التطوير باستخدام MyMemory Translation API
+        </div>
+    </div>
+
+    <script>
+        // تعريف اللغات المستهدفة وأماكن عرضها
+        const targetLangs = { ar: 'output_ar', fr: 'output_fr', en: 'output_en' };
+        const targetBoxes = { ar: 'output_ar_box', fr: 'output_fr_box', en: 'output_en_box' };
+        let timeoutId;
+        
+        let recognition = null;
+        const micButton = document.getElementById('micButton');
+        const sourceTextarea = document.getElementById('sourceText');
+        const sourceLangSelect = document.getElementById('sourceLang');
+
+        // وظيفة تسجيل الصوت (Speech-to-Text)
+        function initializeSpeechRecognition(lang) {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                micButton.disabled = true;
+                return null;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            
+            let langCode;
+            if (lang === 'ar') langCode = 'ar-SA';
+            else if (lang === 'fr') langCode = 'fr-FR';
+            else if (lang === 'en') langCode = 'en-US';
+
+            recognition.lang = langCode;
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                micButton.classList.add('recording');
+                document.getElementById('loading').textContent = '...جاري الاستماع';
+                document.getElementById('loading').style.display = 'block';
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                sourceTextarea.value = transcript;
+                runTranslation();
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech Recognition Error:', event.error);
+                micButton.classList.remove('recording');
+                document.getElementById('loading').textContent = '...خطأ في التعرف على الصوت';
+                setTimeout(() => document.getElementById('loading').style.display = 'none', 2000);
+            };
+
+            recognition.onend = () => {
+                micButton.classList.remove('recording');
+                if (!sourceTextarea.value.trim()) {
+                    document.getElementById('loading').style.display = 'none';
+                }
+            };
+            return recognition;
+        }
+
+        function toggleRecording() {
+            const sourceLang = sourceLangSelect.value;
+            
+            if (!recognition) {
+                 recognition = initializeSpeechRecognition(sourceLang);
+            }
+
+            if (micButton.classList.contains('recording')) {
+                recognition.stop();
+            } else {
+                recognition.stop(); 
+                recognition = initializeSpeechRecognition(sourceLang); 
+                sourceTextarea.value = ''; 
+                recognition.start();
+            }
+        }
+        
+        // ميزة التحسين التلقائي (Auto-Correction)
+        function autoCorrect(text, lang) {
+            if (lang === 'en') {
+                text = text.replace(/\bim\b/g, "I'm");
+                text = text.replace(/\byour\b/g, "you're");
+                text = text.replace(/\bdont\b/g, "don't");
+                text = text.replace(/\bwont\b/g, "won't");
+            } else if (lang === 'fr') {
+                text = text.replace(/\bsa va\b/g, "ça va");
+                text = text.replace(/\bcommen sa va\b/g, "comment ça va");
+            }
+            return text;
+        }
+
+        // دالة نطق النص (Text-to-Speech)
+        function speakText(elementId, langCode) {
+            const textToSpeak = document.getElementById(elementId).textContent;
+            
+            if (!textToSpeak || textToSpeak.startsWith("فشل") || textToSpeak.startsWith("جاري")) return;
+
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                utterance.lang = langCode; 
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+        
+        // دالة Debouncing
+        function debounceTranslation() {
+            clearTimeout(timeoutId); 
+            const sourceText = sourceTextarea.value.trim();
+
+            if (sourceText.length === 0) {
+                 for (const key in targetLangs) {
+                    document.getElementById(targetLangs[key]).textContent = "";
+                    document.getElementById(targetBoxes[key]).style.display = 'flex'; 
+                }
+                document.getElementById('loading').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'none';
+
+            timeoutId = setTimeout(() => {
+                runTranslation();
+            }, 500); 
+        }
+
+        // دالة الاتصال بالـ API
+        async function fetchTranslation(text, source, target) {
+            const apiUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${source}|${target}`;
+            const response = await fetch(apiUrl);
+            
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const data = await response.json();
+            
+            if (data.responseStatus !== 200) throw new Error(`API error: ${data.responseDetails || 'Unknown error'}`);
+
+            return data.responseData.translatedText;
+        }
+
+        // الدالة الرئيسية للترجمة
+        async function runTranslation() {
+            let sourceText = sourceTextarea.value.trim();
+            const sourceLang = sourceLangSelect.value;
+            const loadingElement = document.getElementById('loading');
+            
+            if (sourceText === "") return;
+
+            sourceText = autoCorrect(sourceText, sourceLang);
+
+            for (const key in targetBoxes) {
+                document.getElementById(targetBoxes[key]).style.display = 'flex';
+                document.getElementById(targetLangs[key]).textContent = "جاري الترجمة...";
+            }
+            
+            const sourceBox = document.getElementById(targetBoxes[sourceLang]);
+            if (sourceBox) {
+                sourceBox.style.display = 'none';
+            }
+
+            loadingElement.textContent = '...جاري الترجمة';
+            loadingElement.style.display = 'block';
+
+            const translationPromises = [];
+
+            for (const targetLangCode in targetLangs) {
+                if (targetLangCode === sourceLang) continue; 
+                
+                translationPromises.push(
+                    fetchTranslation(sourceText, sourceLang, targetLangCode)
+                        .then(translation => {
+                            document.getElementById(targetLangs[targetLangCode]).textContent = translation;
+                        })
+                        .catch(error => {
+                            console.error(`Error translating to ${targetLangCode}:`, error);
+                            document.getElementById(targetLangs[targetLangCode]).textContent = "فشل في الترجمة";
+                        })
+                );
+            }
+
+            await Promise.all(translationPromises);
+
+            loadingElement.style.display = 'none';
+        }
+        
+        // تهيئة بسيطة عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', () => {
+            sourceTextarea.value = '';
+             for (const key in targetLangs) {
+                document.getElementById(targetLangs[key]).textContent = "";
+                document.getElementById(targetBoxes[key]).style.display = 'flex'; 
+            }
+            // اختيار الإنجليزية كافتراضي للإدخال
+            sourceLangSelect.value = 'en';
+        });
+
+    </script>
+
+</body>
+</html>
