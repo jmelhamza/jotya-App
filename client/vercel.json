@@ -2,7 +2,7 @@
   "rewrites": [
     { 
       "source": "/", 
-      "destination": "/app.html" 
+      "destination": "/App.html" 
     }
   ],
   "builds": [
