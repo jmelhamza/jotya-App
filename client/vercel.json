@@ -2,13 +2,7 @@
   "rewrites": [
     { 
       "source": "/", 
-      "destination": "/App.html" 
-    }
-  ],
-  "builds": [
-    { 
-      "src": "*.html", 
-      "use": "@vercel/static" 
+      "destination": "/app.html" 
     }
   ]
 }
