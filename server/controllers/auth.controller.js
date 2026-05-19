@@ -16,15 +16,7 @@ export const register = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = new User({
-      name,
-      email,
-      password: hashedPassword,
-      phone: phone || null,
-      role: 'user',
-    });
-
+    const newUser = new User({ name, email, password: hashedPassword, phone: phone || null, role: 'user' });
     await newUser.save();
     res.status(201).json({ message: 'Compte créé avec succès.' });
   } catch (err) {
@@ -62,7 +54,6 @@ export const login = async (req, res) => {
         role: user.role,
         image: user.image,
         phone: user.phone,
-        sellerStatus: user.sellerStatus,
       }
     });
   } catch (err) {

@@ -1,6 +1,6 @@
 import Product from "../models/product.model.js";
 
-// Get all products (public) — no approval filter for backward compat with existing DB
+// Get all products — no approval filter (backward compat)
 export const getProducts = async (req, res) => {
   try {
     const filter = {};
@@ -20,7 +20,7 @@ export const getProducts = async (req, res) => {
   }
 };
 
-// Get ALL products for admin
+// Admin: all products
 export const getAllProducts = async (req, res) => {
   try {
     const products = await Product.find()
@@ -28,36 +28,20 @@ export const getAllProducts = async (req, res) => {
       .populate('seller', 'name email role');
     res.status(200).json({ success: true, data: products });
   } catch (error) {
-    console.error('Erreur getAllProducts:', error.message);
     res.status(500).json({ success: false, message: 'Erreur serveur.' });
   }
 };
 
 // Create product
 export const createProduct = async (req, res) => {
-  const {
-    title = '',
-    price = '',
-    description = '',
-    category = '',
-    status = 'Disponible',
-  } = req.body;
+  const { title = '', price = '', description = '', category = '', status = 'Disponible' } = req.body;
 
   if (!title || !price || !category) {
     return res.status(400).json({ success: false, message: "Tous les champs obligatoires" });
   }
 
   const images = req.files?.map(file => `/uploads/${file.filename}`) || [];
-
-  const newProduct = new Product({
-    title,
-    price,
-    description,
-    category,
-    status,
-    image: images,
-    seller: req.user.id,
-  });
+  const newProduct = new Product({ title, price, description, category, status, image: images, seller: req.user.id });
 
   try {
     await newProduct.save();
@@ -93,7 +77,6 @@ export const updateProduct = async (req, res) => {
     const updatedProduct = await product.save();
     res.status(200).json({ success: true, data: updatedProduct });
   } catch (error) {
-    console.error("Erreur lors de la modification :", error.message);
     res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
@@ -112,7 +95,6 @@ export const deleteProduct = async (req, res) => {
     await Product.findByIdAndDelete(id);
     res.status(200).json({ success: true, message: "Produit supprimé" });
   } catch (error) {
-    console.error("Erreur lors de la suppression :", error.message);
     res.status(500).json({ success: false, message: "Erreur serveur" });
   }
 };
@@ -120,8 +102,7 @@ export const deleteProduct = async (req, res) => {
 // Get products by user
 export const getProductsByUser = async (req, res) => {
   try {
-    const userId = req.params.userId;
-    const products = await Product.find({ seller: userId }).sort({ createdAt: -1 });
+    const products = await Product.find({ seller: req.params.userId }).sort({ createdAt: -1 });
     res.status(200).json(products);
   } catch (error) {
     res.status(500).json({ message: "Erreur lors de la récupération" });
@@ -132,17 +113,14 @@ export const getProductsByUser = async (req, res) => {
 export const reviewProduct = async (req, res) => {
   const { id } = req.params;
   const { approvalStatus } = req.body;
-
   if (!['approved', 'rejected'].includes(approvalStatus)) {
     return res.status(400).json({ success: false, message: "Statut invalide." });
   }
-
   try {
     const product = await Product.findByIdAndUpdate(id, { approvalStatus }, { new: true });
     if (!product) return res.status(404).json({ success: false, message: "Produit introuvable." });
     res.status(200).json({ success: true, data: product });
   } catch (error) {
-    console.error("Erreur reviewProduct:", error.message);
     res.status(500).json({ success: false, message: "Erreur serveur." });
   }
 };
