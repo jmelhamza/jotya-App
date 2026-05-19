@@ -1,13 +1,15 @@
-import mongoose from "mongoose"
-import dotenv from "dotenv";
- dotenv.config(); 
-export const connectDB = async ()=>{
-    try{
- const conn = await mongoose.connect(process.env.MONGODB_URI)
- console.log(`Mongo connected .${conn.connection.host}`)
-    }
-    catch (error) {
-        console.error(`error.message :${error.message }`) 
-        process.exit(1)  // process code 1
-    }
-}  
+import mongoose from 'mongoose';
+
+export const connectDB = async () => {
+  try {
+    // إيلاprocess.env.MONGO_URI عطات undefined لأي سبب، غياخد الرابط المحلي تلقائياً
+    const dbURI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/jotiya_db";
+    
+    console.log("جاري الاتصال بـ MongoDB...");
+    const conn = await mongoose.connect(dbURI);
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error(`❌ Database Connection Error: ${error.message}`);
+    process.exit(1);
+  }
+};

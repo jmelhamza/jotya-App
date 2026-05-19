@@ -1,9 +1,9 @@
-// server/routes/auth.router.js
-import express from 'express'
-import { login } from '../controllers/auth.controller.js' // 👈 تم حذف `register`
+import express from 'express';
+import { login, register } from '../controllers/auth.controller.js';
 
-const router = express.Router()
+const router = express.Router();
 
-router.post("/login", login) // 👈 تم حذف مسار التسجيل
+router.post("/register", register);
+router.post("/login", login);
 
-export default router
+export default router;

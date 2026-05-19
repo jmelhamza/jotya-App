@@ -1,21 +1,18 @@
-// client/src/components/Navbar.jsx
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/Navbar.css';
-import { useAuth } from '../context/AuthContext'; // 👈 استيراد الهوك الجديد
-import votreLogo from '../assets/kiki__2_-removebg-preview.png'; // 👈 قم بتغيير هذا المسار واسم الملف
+import { useAuth } from '../context/AuthContext';
+import votreLogo from '../assets/kiki__2_-removebg-preview.png';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { isLoggedIn, user, logout } = useAuth(); // 👈 استخدام الهوك الجديد
+  const { isLoggedIn, user, logout } = useAuth();
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
-  };
-  
+  const close = () => setIsOpen(false);
+
   const handleLogout = () => {
     logout();
-    setIsOpen(false);
+    close();
   };
 
   return (
@@ -27,37 +24,54 @@ const Navbar = () => {
       </div>
 
       <div className={`nav-links ${isOpen ? "open" : ""}`}>
-        <li><Link to="/" onClick={() => setIsOpen(false)}>Accueil</Link></li>
-        <li><Link to="/produits" onClick={() => setIsOpen(false)}>Produits</Link></li>
-        <li><Link to="/panier" onClick={() => setIsOpen(false)}>Panier</Link></li>
-        <li><Link to="/a-propos" onClick={() => setIsOpen(false)}>À propos</Link></li>
+        <li><Link to="/" onClick={close}>Accueil</Link></li>
+        <li><Link to="/produits" onClick={close}>Produits</Link></li>
+        <li><Link to="/panier" onClick={close}>Panier</Link></li>
+        <li><Link to="/about" onClick={close}>À propos</Link></li>
 
-        {/* ✅ عرض الروابط الخاصة بالمسؤول فقط في حالة تسجيل الدخول ودوره 'admin' */}
+        {/* Admin only */}
         {isLoggedIn && user?.role === 'admin' && (
           <>
-            <li><Link to="/ajouter-produit" onClick={() => setIsOpen(false)}>Ajouter un produit</Link></li>
-            <li><Link to="/admin" onClick={() => setIsOpen(false)}>Dashboard</Link></li>
+            <li><Link to="/ajouter-produit" onClick={close}>Ajouter produit</Link></li>
+            <li><Link to="/admin" onClick={close}>Dashboard</Link></li>
           </>
         )}
 
-        {/* ✅ عرض رابط "Mon Compte" فقط للمستخدمين المسجلين */}
-        {isLoggedIn && <li><Link to="/mon-compte" onClick={() => setIsOpen(false)}>Mon Compte</Link></li>}
+        {/* Seller only */}
+        {isLoggedIn && user?.role === 'seller' && (
+          <li><Link to="/ajouter-produit" onClick={close}>Vendre</Link></li>
+        )}
 
-        {/* ✅ عرض زر تسجيل الخروج أو تسجيل الدخول */}
+        {/* Logged in users */}
+        {isLoggedIn && (
+          <>
+            <li><Link to="/mon-compte" onClick={close}>Mon Compte</Link></li>
+            <li><Link to="/mes-commandes" onClick={close}>Mes commandes</Link></li>
+          </>
+        )}
+
+        {/* Become seller — for regular users only */}
+        {isLoggedIn && user?.role === 'user' && (
+          <li><Link to="/devenir-vendeur" onClick={close}>Devenir vendeur</Link></li>
+        )}
+
         {isLoggedIn ? (
           <li><Link to="/" onClick={handleLogout}>Déconnexion</Link></li>
         ) : (
-          null // ✅ لا يوجد رابط تسجيل دخول للمستخدمين العاديين
+          <>
+            <li><Link to="/connexion" onClick={close}>Connexion</Link></li>
+            <li><Link to="/inscription" onClick={close}>S'inscrire</Link></li>
+          </>
         )}
       </div>
 
       <div
         className={`hamburger ${isOpen ? "open" : ""}`}
-        onClick={toggleMenu}
+        onClick={() => setIsOpen(!isOpen)}
         aria-label="Toggle menu"
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter') toggleMenu(); }}
+        onKeyDown={(e) => { if (e.key === 'Enter') setIsOpen(!isOpen); }}
       >
         <span></span>
         <span></span>

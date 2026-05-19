@@ -1,23 +1,32 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import '../styles/Products.css';
-import { CartContext } from '../context/CartContext.jsx';
+import { useNavigate } from 'react-router-dom';
 
-// ✅ أضف هذا السطر في الأعلى لاستخدام المتغير البيئي
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const categories = [
-  'Tous',
-  'Electronique',
-  'Vetements',
-  'Meubles',
-  'Cuisine',
-  'Jouets',
-  'Livres',
-  'Outils',
-  'Accessoires',
-  'Decoration',
-  'Sport',
+  { value: 'Tous', label: 'Tous', icon: '🛍️' },
+  { value: 'Electronique', label: 'Électronique', icon: '📱' },
+  { value: 'Telephonie', label: 'Téléphonie', icon: '📞' },
+  { value: 'Informatique', label: 'Informatique', icon: '💻' },
+  { value: 'Vetements', label: 'Vêtements', icon: '👕' },
+  { value: 'Chaussures', label: 'Chaussures', icon: '👟' },
+  { value: 'Sacs', label: 'Sacs', icon: '👜' },
+  { value: 'Accessoires', label: 'Accessoires', icon: '💍' },
+  { value: 'Beaute', label: 'Beauté', icon: '💄' },
+  { value: 'Meubles', label: 'Meubles', icon: '🛋️' },
+  { value: 'Decoration', label: 'Décoration', icon: '🪴' },
+  { value: 'Cuisine', label: 'Cuisine', icon: '🍳' },
+  { value: 'Jouets', label: 'Jouets', icon: '🧸' },
+  { value: 'Livres', label: 'Livres', icon: '📚' },
+  { value: 'Sport', label: 'Sport', icon: '⚽' },
+  { value: 'Outils', label: 'Outils', icon: '🔧' },
+  { value: 'Vehicules', label: 'Véhicules', icon: '🚗' },
+  { value: 'Immobilier', label: 'Immobilier', icon: '🏠' },
+  { value: 'Animaux', label: 'Animaux', icon: '🐾' },
+  { value: 'Services', label: 'Services', icon: '🛠️' },
+  { value: 'Autres', label: 'Autres', icon: '📦' },
 ];
 
 const Products = () => {
@@ -25,18 +34,16 @@ const Products = () => {
   const [filterCat, setFilterCat] = useState('Tous');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedImage, setSelectedImage] = useState(null);
-
-  const { addToCart } = useContext(CartContext);
+  const [search, setSearch] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        // ✅ تم تعديل هذا السطر لاستخدام الرابط الأساسي الديناميكي
         const res = await axios.get(`${API_BASE_URL}/api/products`);
         setProducts(res.data.data);
       } catch (err) {
-        setError('Erreur lors du chargement des produits');
+        setError('Erreur lors du chargement des produits.');
       } finally {
         setLoading(false);
       }
@@ -44,80 +51,75 @@ const Products = () => {
     fetchProducts();
   }, []);
 
-  const filteredProducts = filterCat === 'Tous' ? products : products.filter(p => p.category === filterCat);
+  const filtered = products.filter(p => {
+    const matchCat = filterCat === 'Tous' || p.category === filterCat;
+    const matchSearch = p.title.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  });
 
-  if (loading) return <p>Chargement des produits...</p>;
-  if (error) return <p>{error}</p>;
+  if (loading) return <p className="loading-msg">Chargement des produits...</p>;
+  if (error) return <p className="error-msg">{error}</p>;
 
   return (
     <div className="products-container">
       <h2>Produits disponibles</h2>
 
-      <div className="filter-buttons">
+      <input
+        type="text"
+        className="search-input"
+        placeholder="Rechercher un produit..."
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+      />
+
+      <div className="category-filter">
         {categories.map(cat => (
           <button
-            key={cat}
-            className={filterCat === cat ? 'active-filter' : ''}
-            onClick={() => setFilterCat(cat)}
+            key={cat.value}
+            className={`cat-btn ${filterCat === cat.value ? 'active-filter' : ''}`}
+            onClick={() => setFilterCat(cat.value)}
           >
-            {cat}
+            <span className="cat-icon">{cat.icon}</span>
+            <span className="cat-label">{cat.label}</span>
           </button>
         ))}
       </div>
 
       <div className="products-grid">
-        {filteredProducts.length === 0 ? (
-          <p>Aucun produit disponible dans cette catégorie.</p>
+        {filtered.length === 0 ? (
+          <p className="empty-msg">Aucun produit disponible dans cette catégorie.</p>
         ) : (
-          filteredProducts.map(product => (
-            <div key={product._id} className="product-card">
+          filtered.map(product => (
+            <div
+              key={product._id}
+              className="product-card"
+              onClick={() => navigate(`/produits/${product._id}`)}
+              style={{ cursor: 'pointer' }}
+            >
               {product.image && product.image.length > 0 && (
                 <img
-                  // ✅ تم تعديل رابط الصورة الأول
                   src={`${API_BASE_URL}${product.image[0]}`}
                   alt={product.title}
                   className="product-image"
-                  // ✅ تم تعديل رابط الصورة الثاني
-                  onClick={() => setSelectedImage(`${API_BASE_URL}${product.image[0]}`)}
-                  style={{ cursor: 'pointer' }}
                 />
               )}
-              <h3>{product.title}</h3>
-              <p>{product.description}</p>
-              <p className="price">{product.price} MAD</p>
-              <p className="category"><strong>Catégorie :</strong> {product.category}</p>
-
-              {product.seller ? (
-                <p>
-                  Publié par: <a href={`/vendeur/${product.seller._id}`}>{product.seller.name}</a>
-                </p>
-              ) : (
-                <p>Vendeur inconnu</p>
-              )}
-
-              <p>
-                <strong>État :</strong>{' '}
-                <span className={product.status === 'Disponible' ? 'status-disponible' : 'status-vendu'}>
+              <div className="product-info">
+                <h3 className="product-title">{product.title}</h3>
+                <p className="product-price">{product.price} MAD</p>
+                <span className={`product-status ${product.status === 'Disponible' ? 'disponible' : 'vendu'}`}>
                   {product.status}
                 </span>
-              </p>
-
-              {product.status === 'Disponible' && product.seller?.role === 'admin' && (
-                <button className="add-to-cart-btn" onClick={() => addToCart(product)}>
-                  Ajouter au panier
-                </button>
-              )}
+                <p className="product-category">{product.category}</p>
+                {product.seller && (
+                  <p className="product-seller">
+                    Vendeur: <strong>{product.seller.shopName || product.seller.name}</strong>
+                  </p>
+                )}
+              </div>
             </div>
           ))
         )}
       </div>
-
-      {selectedImage && (
-        <div className="image-popup" onClick={() => setSelectedImage(null)}>
-          <button className="close-button" onClick={() => setSelectedImage(null)}>Fermer ✖</button>
-          <img src={selectedImage} alt="Produit agrandi" />
-        </div>
-      )}
     </div>
   );
 };

@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import '../styles/Login.css';
 import jotiyaLogo from '../assets/jotiya-logo.png';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // 👈 أضفنا هذا الاستيراد
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth(); // 👈 استخدام الهوك الجديد
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
@@ -35,16 +35,13 @@ const Login = () => {
     if (Object.keys(validationErrors).length === 0) {
       try {
         const res = await axios.post(`${API_BASE_URL}/api/auth/login`, formData);
-        const token = res.data.token;
-        
-        // استخدام دالة login من الـ Context لتخزين التوكن
-        login(token); 
-
+        const { token } = res.data;
+        login(token);
         setMessage("Connexion réussie !");
-        navigate('/'); 
+        navigate('/');
       } catch (err) {
         console.error(err);
-        setMessage("Email ou mot de passe incorrect.");
+        setMessage(err.response?.data?.message || "Email ou mot de passe incorrect.");
       }
     }
   };
@@ -56,7 +53,7 @@ const Login = () => {
       </div>
       <div className="login-right">
         <h2>Connexion</h2>
-        {message && <p>{message}</p>}
+        {message && <p className="error">{message}</p>}
         <form className="login-form" onSubmit={handleSubmit}>
           <input
             type="email"
@@ -78,7 +75,7 @@ const Login = () => {
 
           <button type="submit">Se connecter</button>
         </form>
-        {/* ✅ تم حذف رابط التسجيل */}
+        <p>Pas encore de compte ? <Link to="/inscription">S'inscrire</Link></p>
       </div>
     </div>
   );

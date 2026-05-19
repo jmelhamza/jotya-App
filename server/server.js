@@ -1,19 +1,19 @@
 import express from "express";
 import dotenv from 'dotenv';
 import { connectDB } from "./config/db.js";
-import productRoutes from "./routes/product.routes.js"
-import { userRoutes } from "./routes/user.routes.js"
+import productRoutes from "./routes/product.routes.js";
+import { userRoutes } from "./routes/user.routes.js";
 import authRoutes from './routes/auth.router.js';
-import cors from "cors"
+import orderRoutes from './routes/order.routes.js';
+import paypalRoutes from './routes/paypal.routes.js';
+import cors from "cors";
 import fs from 'fs';
-import path from 'path'
-import paypalRoutes from './routes/paypal.routes.js'
+import path from 'path';
 
 dotenv.config();
 
 const app = express();
 
-// إنشاء مجلد uploads إذا ماكانش
 const uploadDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
@@ -22,14 +22,11 @@ if (!fs.existsSync(uploadDir)) {
 
 const PORT = process.env.PORT || 5000;
 
-// ✅ إعداد CORS للسماح بالوصول من مختلف الروابط
 const allowedOrigins = [
-  'http://localhost:5173', // رابط التطوير المحلي
-  'https://jotya.xyz', // رابط نطاقك الأساسي
-  'https://www.jotiya.xyz', // رابط نطاقك مع www
-  // قم بإضافة رابط مشروعك على Vercel هنا
-  // ستجده في إعدادات Vercel > Domains
-  'https://jotya-app-git-main-jmelhamzas-projects.vercel.app', 
+  'http://localhost:5173',
+  'https://jotya.xyz',
+  'https://www.jotiya.xyz',
+  'https://jotya-app-git-main-jmelhamzas-projects.vercel.app',
 ];
 
 const corsOptions = {
@@ -44,14 +41,14 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use('/api/paypal', paypalRoutes);
 app.use(express.json());
 
 app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/paypal', paypalRoutes);
 
-// جعل مجلد uploads متاح للاستعمال عبر URL
 app.use('/uploads', express.static('uploads'));
 
 app.listen(PORT, () => {
