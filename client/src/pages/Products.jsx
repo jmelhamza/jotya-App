@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import '../styles/Products.css';
+import { CartContext } from '../context/CartContext.jsx';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -35,6 +37,10 @@ const Products = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  const { addToCart } = useContext(CartContext);
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -72,22 +78,21 @@ const Products = () => {
         onChange={e => setSearch(e.target.value)}
       />
 
-      <div className="category-filter">
+      <div className="filter-buttons">
         {categories.map(cat => (
           <button
             key={cat.value}
-            className={`cat-btn ${filterCat === cat.value ? 'active-filter' : ''}`}
+            className={filterCat === cat.value ? 'active-filter' : ''}
             onClick={() => setFilterCat(cat.value)}
           >
-            <span className="cat-icon">{cat.icon}</span>
-            <span className="cat-label">{cat.label}</span>
+            <span>{cat.icon}</span> {cat.label}
           </button>
         ))}
       </div>
 
       <div className="products-grid">
         {filtered.length === 0 ? (
-          <p className="empty-msg">Aucun produit disponible dans cette catégorie.</p>
+          <p>Aucun produit disponible dans cette catégorie.</p>
         ) : (
           filtered.map(product => (
             <div
@@ -101,25 +106,52 @@ const Products = () => {
                   src={`${API_BASE_URL}${product.image[0]}`}
                   alt={product.title}
                   className="product-image"
+                  onClick={e => { e.stopPropagation(); setSelectedImage(`${API_BASE_URL}${product.image[0]}`); }}
                 />
               )}
-              <div className="product-info">
-                <h3 className="product-title">{product.title}</h3>
-                <p className="product-price">{product.price} MAD</p>
-                <span className={`product-status ${product.status === 'Disponible' ? 'disponible' : 'vendu'}`}>
+              <h3>{product.title}</h3>
+              <p className="price">{product.price} MAD</p>
+              <p className="category"><strong>Catégorie :</strong> {product.category}</p>
+
+              {product.seller ? (
+                <p>
+                  Vendeur: <a
+                    href={`/vendeur/${product.seller._id}`}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    {product.seller.shopName || product.seller.name}
+                  </a>
+                </p>
+              ) : (
+                <p>Vendeur inconnu</p>
+              )}
+
+              <p>
+                <strong>État :</strong>{' '}
+                <span className={product.status === 'Disponible' ? 'status-disponible' : 'status-vendu'}>
                   {product.status}
                 </span>
-                <p className="product-category">{product.category}</p>
-                {product.seller && (
-                  <p className="product-seller">
-                    Vendeur: <strong>{product.seller.shopName || product.seller.name}</strong>
-                  </p>
-                )}
-              </div>
+              </p>
+
+              {product.status === 'Disponible' && product.seller?.role === 'admin' && (
+                <button
+                  className="add-to-cart-btn"
+                  onClick={e => { e.stopPropagation(); addToCart(product); }}
+                >
+                  Ajouter au panier
+                </button>
+              )}
             </div>
           ))
         )}
       </div>
+
+      {selectedImage && (
+        <div className="image-popup" onClick={() => setSelectedImage(null)}>
+          <button className="close-button" onClick={() => setSelectedImage(null)}>Fermer ✖</button>
+          <img src={selectedImage} alt="Produit agrandi" />
+        </div>
+      )}
     </div>
   );
 };
