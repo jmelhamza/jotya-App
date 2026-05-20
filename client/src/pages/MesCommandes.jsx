@@ -17,6 +17,26 @@ const MesCommandes = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const handleOrderClick = async (order) => {
+    if (!order.product || !order.seller) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(
+        `${API_BASE_URL}/api/messages/conversations`,
+        { sellerId: order.seller._id, productId: order.product._id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const convId = res.data.data?._id;
+      if (convId) {
+        navigate(`/messages?convId=${convId}`);
+      } else {
+        navigate('/messages');
+      }
+    } catch {
+      navigate('/messages');
+    }
+  };
+
   useEffect(() => {
     if (!isLoggedIn) { navigate('/connexion'); return; }
     const fetchOrders = async () => {
@@ -59,7 +79,7 @@ const MesCommandes = () => {
           {orders.map(order => {
             const s = statusConfig[order.status] || statusConfig.pending;
             return (
-              <div key={order._id} style={styles.card}>
+              <div key={order._id} style={{...styles.card, cursor: 'pointer'}} onClick={() => handleOrderClick(order)}>
                 {/* Image */}
                 {order.product?.image?.[0] && (
                   <img

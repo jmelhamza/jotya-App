@@ -70,7 +70,17 @@ const Navbar = () => {
           <li className="account-menu-item" ref={dropdownRef}>
             <button className="account-btn" onClick={() => setAccountOpen(!accountOpen)}>
               <span className="account-avatar">
-                {user?.name?.[0]?.toUpperCase() || '?'}
+                {user?.image
+                  ? <img src={`${API_BASE_URL}${user.image}`} alt={user.name} className="account-avatar-img" />
+                  : user?.name?.[0]?.toUpperCase()
+                    ? user.name[0].toUpperCase()
+                    : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="account-avatar-icon">
+                        <circle cx="12" cy="8" r="4"/>
+                        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                      </svg>
+                    )
+                }
               </span>
               <span className="account-name">{user?.name?.split(' ')[0]}</span>
               {unreadCount > 0 && <span className="account-badge">{unreadCount}</span>}

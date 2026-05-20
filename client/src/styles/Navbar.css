@@ -97,6 +97,20 @@
   flex-shrink: 0;
 }
 
+.account-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.account-avatar-icon {
+  width: 16px;
+  height: 16px;
+  stroke: #f97316;
+}
+
 .account-name {
   max-width: 90px;
   overflow: hidden;
