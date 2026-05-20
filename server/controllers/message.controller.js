@@ -1,9 +1,13 @@
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
 import User from "../models/user.model.js";
+import mongoose from "mongoose";
 
-// Start or get an existing conversation between current user and a seller, optionally about a product
+const isDbReady = () => mongoose.connection.readyState === 1;
+
+// Start or get an existing conversation between current user and a seller
 export const getOrCreateConversation = async (req, res) => {
+  if (!isDbReady()) return res.status(503).json({ message: "Service temporairement indisponible." });
   try {
     const myId = req.user.id;
     const { sellerId, productId } = req.body;
@@ -14,10 +18,7 @@ export const getOrCreateConversation = async (req, res) => {
     const seller = await User.findById(sellerId);
     if (!seller) return res.status(404).json({ message: "Vendeur introuvable." });
 
-    // Look for existing conversation between these two participants (and optionally same product)
-    let query = {
-      participants: { $all: [myId, sellerId] },
-    };
+    let query = { participants: { $all: [myId, sellerId] } };
     if (productId) query.product = productId;
 
     let conversation = await Conversation.findOne(query)
@@ -44,15 +45,14 @@ export const getOrCreateConversation = async (req, res) => {
 
 // Get all conversations for the current user
 export const getMyConversations = async (req, res) => {
+  if (!isDbReady()) return res.status(503).json({ message: "Service temporairement indisponible." });
   try {
     const myId = req.user.id;
-
     const conversations = await Conversation.find({ participants: myId })
       .sort({ lastMessageAt: -1 })
       .populate('participants', 'name image shopName role')
       .populate('product', 'title image price');
 
-    // Add unread count for current user
     const result = conversations.map(conv => {
       const unread = conv.unreadCount?.get?.(myId.toString()) || 0;
       return { ...conv.toObject(), myUnread: unread };
@@ -67,6 +67,7 @@ export const getMyConversations = async (req, res) => {
 
 // Get all messages in a conversation
 export const getMessages = async (req, res) => {
+  if (!isDbReady()) return res.status(503).json({ message: "Service temporairement indisponible." });
   try {
     const myId = req.user.id;
     const { conversationId } = req.params;
@@ -77,23 +78,18 @@ export const getMessages = async (req, res) => {
 
     if (!conversation) return res.status(404).json({ message: "Conversation introuvable." });
 
-    // Make sure current user is a participant
-    const isParticipant = conversation.participants.some(
-      p => p._id.toString() === myId.toString()
-    );
+    const isParticipant = conversation.participants.some(p => p._id.toString() === myId.toString());
     if (!isParticipant) return res.status(403).json({ message: "Accès refusé." });
 
     const messages = await Message.find({ conversation: conversationId })
       .sort({ createdAt: 1 })
       .populate('sender', 'name image shopName role');
 
-    // Mark messages as read for current user
     await Message.updateMany(
       { conversation: conversationId, sender: { $ne: myId }, read: false },
       { read: true }
     );
 
-    // Reset unread count for current user
     const unreadMap = conversation.unreadCount || new Map();
     unreadMap.set(myId.toString(), 0);
     conversation.unreadCount = unreadMap;
@@ -106,8 +102,9 @@ export const getMessages = async (req, res) => {
   }
 };
 
-// Send a message in a conversation
+// Send a message
 export const sendMessage = async (req, res) => {
+  if (!isDbReady()) return res.status(503).json({ message: "Service temporairement indisponible." });
   try {
     const myId = req.user.id;
     const { conversationId } = req.params;
@@ -118,30 +115,19 @@ export const sendMessage = async (req, res) => {
     const conversation = await Conversation.findById(conversationId);
     if (!conversation) return res.status(404).json({ message: "Conversation introuvable." });
 
-    // Check participant
-    const isParticipant = conversation.participants.some(
-      p => p.toString() === myId.toString()
-    );
+    const isParticipant = conversation.participants.some(p => p.toString() === myId.toString());
     if (!isParticipant) return res.status(403).json({ message: "Accès refusé." });
 
-    // Create the message
-    const message = new Message({
-      conversation: conversationId,
-      sender: myId,
-      text: text.trim(),
-    });
+    const message = new Message({ conversation: conversationId, sender: myId, text: text.trim() });
     await message.save();
     await message.populate('sender', 'name image shopName role');
 
-    // Update conversation last message and unread count for the OTHER participant
     const otherId = conversation.participants.find(p => p.toString() !== myId.toString());
     const unreadMap = conversation.unreadCount instanceof Map
       ? conversation.unreadCount
       : new Map(Object.entries(conversation.unreadCount || {}));
 
-    const otherUnread = (unreadMap.get(otherId.toString()) || 0) + 1;
-    unreadMap.set(otherId.toString(), otherUnread);
-
+    unreadMap.set(otherId.toString(), (unreadMap.get(otherId.toString()) || 0) + 1);
     conversation.lastMessage = text.trim().substring(0, 100);
     conversation.lastMessageAt = new Date();
     conversation.unreadCount = unreadMap;
@@ -154,21 +140,25 @@ export const sendMessage = async (req, res) => {
   }
 };
 
-// Get total unread messages count for current user (for navbar badge)
+// Get total unread count for navbar badge — safe version
 export const getUnreadCount = async (req, res) => {
+  if (!isDbReady()) {
+    // Return 0 silently instead of crashing — navbar still works
+    return res.status(200).json({ success: true, unread: 0 });
+  }
   try {
     const myId = req.user.id;
     const conversations = await Conversation.find({ participants: myId });
 
     let total = 0;
     for (const conv of conversations) {
-      const count = conv.unreadCount?.get?.(myId.toString()) || 0;
-      total += count;
+      total += conv.unreadCount?.get?.(myId.toString()) || 0;
     }
 
     res.status(200).json({ success: true, unread: total });
   } catch (error) {
     console.error("Erreur getUnreadCount:", error.message);
-    res.status(500).json({ message: "Erreur serveur." });
+    // Return 0 instead of 500 — badge will just show nothing
+    res.status(200).json({ success: true, unread: 0 });
   }
 };
