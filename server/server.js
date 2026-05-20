@@ -2,7 +2,6 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
-// Load .env from root folder — works wherever server is run from
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '../.env') });
@@ -13,6 +12,7 @@ import productRoutes from "./routes/product.routes.js";
 import { userRoutes } from "./routes/user.routes.js";
 import authRoutes from './routes/auth.router.js';
 import orderRoutes from './routes/order.routes.js';
+import messageRoutes from './routes/message.routes.js';
 import cors from "cors";
 import fs from 'fs';
 
@@ -46,6 +46,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/messages', messageRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.listen(PORT, () => {

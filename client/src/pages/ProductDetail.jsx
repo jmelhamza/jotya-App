@@ -18,6 +18,7 @@ const ProductDetail = () => {
   const [orderMessage, setOrderMessage] = useState('');
   const [orderSent, setOrderSent] = useState(false);
   const [sending, setSending] = useState(false);
+  const [contactingVendeur, setContactingVendeur] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -35,8 +36,26 @@ const ProductDetail = () => {
     fetchProduct();
   }, [id]);
 
-  const handleOrder = async () => {
-    if (!isLoggedIn) {
+  const handleContactSeller = async () => {
+    if (!isLoggedIn) { navigate('/connexion'); return; }
+    if (!product?.seller) return;
+    setContactingVendeur(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(
+        `${API_BASE_URL}/api/messages/conversations`,
+        { sellerId: product.seller._id, productId: product._id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      navigate(`/messages?convId=${res.data.data._id}`);
+    } catch (err) {
+      alert('Erreur lors de la création de la conversation.');
+    } finally {
+      setContactingVendeur(false);
+    }
+  };
+
+  const handleOrder = async () => {    if (!isLoggedIn) {
       navigate('/connexion');
       return;
     }
@@ -149,6 +168,28 @@ const ProductDetail = () => {
                 Voir le profil du vendeur →
               </Link>
             </div>
+          )}
+
+          {/* Contact seller button */}
+          {product.status !== 'Vendu' && product.seller && user?._id !== product.seller._id && (
+            <button
+              onClick={handleContactSeller}
+              disabled={contactingVendeur}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: '#fff',
+                color: '#e63946',
+                border: '2px solid #e63946',
+                borderRadius: '10px',
+                fontSize: '15px',
+                fontWeight: '600',
+                cursor: contactingVendeur ? 'not-allowed' : 'pointer',
+                marginBottom: '10px',
+              }}
+            >
+              {contactingVendeur ? 'Connexion...' : '💬 Contacter le vendeur'}
+            </button>
           )}
 
           {product.status === 'Vendu' ? (

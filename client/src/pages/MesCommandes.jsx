@@ -1,20 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-const statusColor = {
-  pending: '#e67e22',
-  accepted: '#27ae60',
-  rejected: '#e74c3c',
-};
-
-const statusLabel = {
-  pending: 'En attente',
-  accepted: 'Acceptée',
-  rejected: 'Refusée',
+const statusConfig = {
+  pending:  { label: 'En attente',  color: '#e67e22', bg: '#fef3e2' },
+  accepted: { label: 'Acceptée ✅', color: '#27ae60', bg: '#e8f5e9' },
+  rejected: { label: 'Refusée ❌',  color: '#e74c3c', bg: '#ffebee' },
 };
 
 const MesCommandes = () => {
@@ -25,7 +19,7 @@ const MesCommandes = () => {
 
   useEffect(() => {
     if (!isLoggedIn) { navigate('/connexion'); return; }
-    const fetch = async () => {
+    const fetchOrders = async () => {
       try {
         const token = localStorage.getItem('token');
         const res = await axios.get(`${API_BASE_URL}/api/orders/my`, {
@@ -38,73 +32,184 @@ const MesCommandes = () => {
         setLoading(false);
       }
     };
-    fetch();
+    fetchOrders();
   }, [isLoggedIn, navigate]);
 
-  if (loading) return <p style={{ padding: '40px', textAlign: 'center' }}>Chargement...</p>;
+  if (loading) return (
+    <div style={{ padding: '60px', textAlign: 'center', color: '#888' }}>
+      Chargement de vos commandes...
+    </div>
+  );
 
   return (
-    <div style={{ maxWidth: '800px', margin: '40px auto', padding: '0 20px' }}>
-      <h2 style={{ marginBottom: '24px' }}>Mes commandes</h2>
+    <div style={styles.page}>
+      <h2 style={styles.title}>Mes commandes</h2>
 
       {orders.length === 0 ? (
-        <p style={{ color: '#888' }}>Vous n'avez pas encore passé de commande.</p>
+        <div style={styles.empty}>
+          <div style={{ fontSize: '48px', marginBottom: '12px' }}>📦</div>
+          <h3 style={{ margin: '0 0 8px', color: '#333' }}>Aucune commande</h3>
+          <p style={{ color: '#888', marginBottom: '20px' }}>
+            Vous n'avez pas encore passé de commande.
+          </p>
+          <Link to="/produits" style={styles.btn}>Découvrir les produits</Link>
+        </div>
       ) : (
-        orders.map(order => (
-          <div key={order._id} style={{
-            background: '#f9f9f9',
-            border: '1px solid #eee',
-            borderRadius: '12px',
-            padding: '18px 20px',
-            marginBottom: '16px',
-            display: 'flex',
-            gap: '20px',
-            alignItems: 'flex-start',
-          }}>
-            {order.product?.image?.[0] && (
-              <img
-                src={`${API_BASE_URL}${order.product.image[0]}`}
-                alt={order.product.title}
-                style={{ width: '90px', height: '90px', objectFit: 'cover', borderRadius: '10px' }}
-              />
-            )}
-            <div style={{ flex: 1 }}>
-              <h3 style={{ margin: '0 0 6px' }}>{order.product?.title}</h3>
-              <p style={{ margin: '0 0 4px', color: '#e63946', fontWeight: '700' }}>
-                {order.totalPrice} MAD
-              </p>
-              <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#555' }}>
-                Vendeur : {order.seller?.shopName || order.seller?.name}
-              </p>
-              {order.seller?.phone && (
-                <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#555' }}>
-                  📞 {order.seller.phone}
-                </p>
-              )}
-              {order.seller?.whatsapp && (
-                <p style={{ margin: '0 0 4px', fontSize: '13px' }}>
-                  <a href={`https://wa.me/${order.seller.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
-                    💬 Contacter sur WhatsApp
-                  </a>
-                </p>
-              )}
-              <p style={{ margin: '8px 0 0', fontSize: '13px' }}>
-                Statut :{' '}
-                <strong style={{ color: statusColor[order.status] }}>
-                  {statusLabel[order.status]}
-                </strong>
-              </p>
-              <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#aaa' }}>
-                {new Date(order.createdAt).toLocaleDateString('fr-FR', {
-                  year: 'numeric', month: 'long', day: 'numeric'
-                })}
-              </p>
-            </div>
-          </div>
-        ))
+        <div style={styles.list}>
+          {orders.map(order => {
+            const s = statusConfig[order.status] || statusConfig.pending;
+            return (
+              <div key={order._id} style={styles.card}>
+                {/* Image */}
+                {order.product?.image?.[0] && (
+                  <img
+                    src={`${API_BASE_URL}${order.product.image[0]}`}
+                    alt={order.product.title}
+                    style={styles.img}
+                  />
+                )}
+
+                {/* Info */}
+                <div style={styles.info}>
+                  <p style={styles.productName}>{order.product?.title}</p>
+                  <p style={styles.price}>{order.totalPrice} MAD</p>
+
+                  {/* Seller contact — shown only when accepted */}
+                  {order.status === 'accepted' && order.seller && (
+                    <div style={styles.sellerBox}>
+                      <p style={{ margin: '0 0 4px', fontWeight: '600', fontSize: '13px' }}>
+                        Contactez le vendeur :
+                      </p>
+                      {order.seller.phone && (
+                        <p style={styles.contact}>📞 {order.seller.phone}</p>
+                      )}
+                      {order.seller.whatsapp && (
+                        <a
+                          href={`https://wa.me/${order.seller.whatsapp.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={styles.waLink}
+                        >
+                          💬 WhatsApp
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#bbb' }}>
+                    {new Date(order.createdAt).toLocaleDateString('fr-FR', {
+                      year: 'numeric', month: 'long', day: 'numeric'
+                    })}
+                  </p>
+                </div>
+
+                {/* Status badge */}
+                <div style={{ ...styles.badge, color: s.color, background: s.bg }}>
+                  {s.label}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
+};
+
+const styles = {
+  page: {
+    maxWidth: '750px',
+    margin: '40px auto',
+    padding: '0 20px',
+    fontFamily: "'Segoe UI', sans-serif",
+  },
+  title: {
+    fontSize: '26px',
+    fontWeight: '700',
+    marginBottom: '28px',
+    color: '#1a1a1a',
+  },
+  list: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '14px',
+  },
+  card: {
+    display: 'flex',
+    gap: '16px',
+    alignItems: 'center',
+    background: '#fff',
+    border: '1px solid #eee',
+    borderRadius: '14px',
+    padding: '16px',
+    boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
+  },
+  img: {
+    width: '90px',
+    height: '90px',
+    objectFit: 'cover',
+    borderRadius: '10px',
+    flexShrink: 0,
+  },
+  info: {
+    flex: 1,
+  },
+  productName: {
+    margin: '0 0 4px',
+    fontWeight: '700',
+    fontSize: '16px',
+    color: '#222',
+  },
+  price: {
+    margin: '0 0 6px',
+    fontWeight: '700',
+    fontSize: '15px',
+    color: '#f97316',
+  },
+  sellerBox: {
+    background: '#f8f8f8',
+    borderRadius: '8px',
+    padding: '8px 12px',
+    marginTop: '6px',
+  },
+  contact: {
+    margin: '2px 0',
+    fontSize: '13px',
+    color: '#444',
+  },
+  waLink: {
+    display: 'inline-block',
+    marginTop: '4px',
+    padding: '4px 12px',
+    background: '#25d366',
+    color: '#fff',
+    borderRadius: '6px',
+    fontSize: '13px',
+    fontWeight: '600',
+    textDecoration: 'none',
+  },
+  badge: {
+    padding: '6px 14px',
+    borderRadius: '20px',
+    fontSize: '13px',
+    fontWeight: '700',
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
+  },
+  empty: {
+    textAlign: 'center',
+    padding: '60px 20px',
+  },
+  btn: {
+    display: 'inline-block',
+    padding: '11px 24px',
+    background: '#f97316',
+    color: '#fff',
+    borderRadius: '9px',
+    textDecoration: 'none',
+    fontWeight: '600',
+    fontSize: '15px',
+  },
 };
 
 export default MesCommandes;
