@@ -4,6 +4,7 @@ import {
   capturePaypalOrder,
   checkRevealAccess,
   getSellerInfo,
+  getPaymentStatus,
   getAllPayments,
 } from '../controllers/payment.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
@@ -22,6 +23,9 @@ router.get('/access/:productId',      protect, checkRevealAccess);
 
 // Get seller contact info (only if buyer paid)
 router.get('/seller-info/:productId', protect, getSellerInfo);
+
+// Check payment status by PayPal order ID
+router.get('/status/:paypalOrderId', protect, getPaymentStatus);
 
 // Admin: see all payments
 router.get('/', protect, isAdmin, getAllPayments);

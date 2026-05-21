@@ -5,18 +5,30 @@ import User from '../models/user.model.js';
 
 // ─── Prices (MAD) ─────────────────────────────────────────────────────────────
 const PRICES = {
-  reveal_seller:   20,   // buyer pays to see seller contact info
-  publish_product: 35,   // seller pays to publish a product (flat fee)
+  reveal_seller:   20,
+  publish_product: 35,
 };
 
-// PayPal converts MAD → EUR (approximate, update as needed)
-// PayPal Sandbox doesn't support MAD — we use EUR equivalent
-const MAD_TO_EUR = 0.092; // 1 MAD ≈ 0.092 EUR
+const MAD_TO_USD = 0.10;
+const toUSD = (mad) => (mad * MAD_TO_USD).toFixed(2);
 
-const toEUR = (mad) => (mad * MAD_TO_EUR).toFixed(2);
+// ─── Check env vars ───────────────────────────────────────────────────────────
+const checkPayPalEnv = () => {
+  const missing = [];
+  if (!process.env.PAYPAL_BASE_URL)      missing.push('PAYPAL_BASE_URL');
+  if (!process.env.PAYPAL_CLIENT_ID)     missing.push('PAYPAL_CLIENT_ID');
+  if (!process.env.PAYPAL_CLIENT_SECRET) missing.push('PAYPAL_CLIENT_SECRET');
+  if (!process.env.CLIENT_URL)           missing.push('CLIENT_URL');
+  return missing;
+};
 
 // ─── Get PayPal access token ──────────────────────────────────────────────────
 const getPayPalToken = async () => {
+  const missing = checkPayPalEnv();
+  if (missing.length > 0) {
+    throw new Error(`Variables d'environnement PayPal manquantes: ${missing.join(', ')}`);
+  }
+
   const res = await fetch(
     `${process.env.PAYPAL_BASE_URL}/v1/oauth2/token`,
     {
@@ -30,7 +42,14 @@ const getPayPalToken = async () => {
       body: 'grant_type=client_credentials',
     }
   );
+
   const data = await res.json();
+
+  if (!data.access_token) {
+    console.error('PayPal token error:', JSON.stringify(data));
+    throw new Error(`Impossible d'obtenir un token PayPal: ${data.error_description || data.error || 'Vérifiez vos clés PayPal'}`);
+  }
+
   return data.access_token;
 };
 
@@ -44,20 +63,17 @@ export const createPaypalOrder = async (req, res) => {
   }
 
   const amountMAD = PRICES[type];
-  const amountEUR = toEUR(amountMAD);
+  const amountUSD = toUSD(amountMAD);
 
   try {
-    // Validate product exists
     if (productId) {
       const product = await Product.findById(productId);
       if (!product) return res.status(404).json({ message: 'Produit introuvable.' });
 
-      // Buyer can't reveal info for their own product
       if (type === 'reveal_seller' && product.seller.toString() === payerId) {
         return res.status(400).json({ message: "C'est votre propre produit." });
       }
 
-      // Check if buyer already paid for this product
       if (type === 'reveal_seller') {
         const existing = await Payment.findOne({
           payer: payerId, type: 'reveal_seller',
@@ -85,7 +101,7 @@ export const createPaypalOrder = async (req, res) => {
       body: JSON.stringify({
         intent: 'CAPTURE',
         purchase_units: [{
-          amount: { currency_code: 'EUR', value: amountEUR },
+          amount: { currency_code: 'USD', value: amountUSD },
           description: descriptions[type],
           custom_id: JSON.stringify({ type, productId: productId || null, payerId }),
         }],
@@ -93,7 +109,7 @@ export const createPaypalOrder = async (req, res) => {
           brand_name: 'Jotya',
           user_action: 'PAY_NOW',
           return_url: `${process.env.CLIENT_URL}/paiement/success`,
-          cancel_url: `${process.env.CLIENT_URL}/paiement/cancel`,
+          cancel_url:  `${process.env.CLIENT_URL}/paiement/cancel`,
         },
       }),
     });
@@ -101,11 +117,12 @@ export const createPaypalOrder = async (req, res) => {
     const ppOrder = await ppRes.json();
 
     if (!ppOrder.id) {
-      console.error('PayPal error:', ppOrder);
-      return res.status(500).json({ message: 'Erreur PayPal lors de la création.' });
+      console.error('PayPal create order error:', JSON.stringify(ppOrder));
+      return res.status(500).json({
+        message: `Erreur PayPal: ${ppOrder.message || ppOrder.error || 'Réponse inattendue'}`,
+      });
     }
 
-    // Save pending payment
     const payment = new Payment({
       payer: payerId,
       type,
@@ -122,15 +139,15 @@ export const createPaypalOrder = async (req, res) => {
       paypalOrderId: ppOrder.id,
       approvalUrl: ppOrder.links.find(l => l.rel === 'approve')?.href,
       amountMAD,
-      amountEUR,
+      amountUSD,
     });
   } catch (error) {
     console.error('createPaypalOrder error:', error.message);
-    res.status(500).json({ message: 'Erreur serveur.' });
+    res.status(500).json({ message: error.message || 'Erreur serveur.' });
   }
 };
 
-// ─── CAPTURE PayPal order (after buyer approves) ──────────────────────────────
+// ─── CAPTURE PayPal order ─────────────────────────────────────────────────────
 export const capturePaypalOrder = async (req, res) => {
   const { paypalOrderId } = req.body;
   const payerId = req.user.id;
@@ -138,6 +155,11 @@ export const capturePaypalOrder = async (req, res) => {
   if (!paypalOrderId) return res.status(400).json({ message: 'paypalOrderId obligatoire.' });
 
   try {
+    const existingPayment = await Payment.findOne({ paypalOrderId });
+    if (existingPayment && existingPayment.status === 'completed') {
+      return res.status(200).json({ success: true, payment: existingPayment, alreadyCaptured: true });
+    }
+
     const accessToken = await getPayPalToken();
 
     const captureRes = await fetch(
@@ -152,27 +174,28 @@ export const capturePaypalOrder = async (req, res) => {
     );
 
     const captureData = await captureRes.json();
+    console.log('PayPal capture response:', JSON.stringify(captureData));
 
     if (captureData.status !== 'COMPLETED') {
       await Payment.findOneAndUpdate(
         { paypalOrderId },
-        { paypalStatus: captureData.status, status: 'failed' }
+        { paypalStatus: captureData.status || 'UNKNOWN', status: 'failed' }
       );
-      return res.status(400).json({ message: 'Paiement non complété.', details: captureData });
+      const reason = captureData.details?.[0]?.description || captureData.message || 'Paiement non complété.';
+      return res.status(400).json({ message: reason, details: captureData });
     }
 
-    // Update payment record
+    // Search by paypalOrderId ONLY — pas par payer pour éviter les mismatches
     const payment = await Payment.findOneAndUpdate(
-      { paypalOrderId, payer: payerId },
-      { paypalStatus: 'COMPLETED', status: 'completed' },
+      { paypalOrderId },
+      { paypalStatus: 'COMPLETED', status: 'completed', payer: payerId },
       { new: true }
     );
 
-    if (!payment) return res.status(404).json({ message: 'Paiement introuvable.' });
+    if (!payment) {
+      return res.status(404).json({ message: 'Paiement introuvable en base. Contactez le support.' });
+    }
 
-    // ── Post-payment actions ──────────────────────────────────────────────────
-
-    // If seller paid to publish → approve the product automatically
     if (payment.type === 'publish_product' && payment.product) {
       await Product.findByIdAndUpdate(payment.product, {
         approvalStatus: 'approved',
@@ -180,27 +203,21 @@ export const capturePaypalOrder = async (req, res) => {
       });
     }
 
-    // If buyer paid to reveal seller info → nothing extra needed
-    // Frontend will call /api/payments/seller-info/:productId to get the info
-
     res.status(200).json({ success: true, payment });
   } catch (error) {
     console.error('capturePaypalOrder error:', error.message);
-    res.status(500).json({ message: 'Erreur serveur.' });
+    res.status(500).json({ message: error.message || 'Erreur serveur.' });
   }
 };
 
-// ─── CHECK if buyer already paid to reveal seller info ───────────────────────
+// ─── CHECK access ─────────────────────────────────────────────────────────────
 export const checkRevealAccess = async (req, res) => {
   const { productId } = req.params;
   const payerId = req.user.id;
-
   try {
     const payment = await Payment.findOne({
-      payer: payerId,
-      type: 'reveal_seller',
-      product: productId,
-      status: 'completed',
+      payer: payerId, type: 'reveal_seller',
+      product: productId, status: 'completed',
     });
     res.status(200).json({ success: true, hasAccess: !!payment });
   } catch (error) {
@@ -208,27 +225,22 @@ export const checkRevealAccess = async (req, res) => {
   }
 };
 
-// ─── GET seller contact info (only if buyer paid) ────────────────────────────
+// ─── GET seller info ──────────────────────────────────────────────────────────
 export const getSellerInfo = async (req, res) => {
   const { productId } = req.params;
   const payerId = req.user.id;
-
   try {
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ message: 'Produit introuvable.' });
 
-    // Owner can always see their own info
-    if (product.seller.toString() === payerId) {
+    if (product.seller.toString() === payerId || req.user.role === 'admin') {
       const seller = await User.findById(product.seller).select('name phone whatsapp facebook shopName email');
       return res.status(200).json({ success: true, seller });
     }
 
-    // Check payment
     const payment = await Payment.findOne({
-      payer: payerId,
-      type: 'reveal_seller',
-      product: productId,
-      status: 'completed',
+      payer: payerId, type: 'reveal_seller',
+      product: productId, status: 'completed',
     });
 
     if (!payment) {
@@ -238,9 +250,7 @@ export const getSellerInfo = async (req, res) => {
       });
     }
 
-    const seller = await User.findById(product.seller)
-      .select('name phone whatsapp facebook shopName email');
-
+    const seller = await User.findById(product.seller).select('name phone whatsapp facebook shopName email');
     res.status(200).json({ success: true, seller });
   } catch (error) {
     console.error('getSellerInfo error:', error.message);
@@ -248,7 +258,19 @@ export const getSellerInfo = async (req, res) => {
   }
 };
 
-// ─── ADMIN: get all payments ──────────────────────────────────────────────────
+// ─── GET payment status ───────────────────────────────────────────────────────
+export const getPaymentStatus = async (req, res) => {
+  const { paypalOrderId } = req.params;
+  try {
+    const payment = await Payment.findOne({ paypalOrderId });
+    if (!payment) return res.status(404).json({ message: 'Paiement introuvable.' });
+    res.status(200).json({ success: true, paypalStatus: payment.paypalStatus, status: payment.status });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+};
+
+// ─── ADMIN: all payments ──────────────────────────────────────────────────────
 export const getAllPayments = async (req, res) => {
   try {
     const payments = await Payment.find()

@@ -91,6 +91,7 @@ const ProductDetail = () => {
   const isOwnProduct = myId && product.seller && (
     (product.seller._id || product.seller).toString() === myId.toString()
   );
+  const isAdminUser  = user?.role === 'admin';
 
   return (
     <div style={{ maxWidth: '900px', margin: '40px auto', padding: '0 20px' }}>
@@ -160,9 +161,9 @@ const ProductDetail = () => {
               📋 Coordonnées du vendeur
             </p>
 
-            {isOwnProduct ? (
-              // Owner sees their own info always
-              <SellerInfoDisplay seller={product.seller} apiBase={API_BASE_URL} />
+            {isOwnProduct || isAdminUser ? (
+              // Owner or admin sees seller info always
+              <SellerInfoDisplay seller={isAdminUser && !isOwnProduct ? product.seller : product.seller} apiBase={API_BASE_URL} />
 
             ) : isSold ? (
               <p style={{ color: '#999', fontSize: '14px' }}>Produit vendu — coordonnées non disponibles.</p>

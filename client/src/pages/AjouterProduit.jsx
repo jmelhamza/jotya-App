@@ -34,17 +34,12 @@ const AjouterProduit = () => {
   const { isLoggedIn, user } = useAuth();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({
-    title: '', price: '', description: '',
-    status: 'Disponible', category: '',
-  });
-  const [images, setImages]             = useState([]);
-  const [publishOption, setPublishOption] = useState(''); // 'paid_flat' | 'commission'
-  const [error, setError]               = useState('');
-
-  // After product is created, we hold its ID to pass to the payment modal
+  const [form, setForm] = useState({ title: '', price: '', description: '', status: 'Disponible', category: '' });
+  const [images, setImages] = useState([]);
+  const [publishOption, setPublishOption] = useState('');
+  const [error, setError] = useState('');
   const [createdProductId, setCreatedProductId] = useState(null);
-  const [showPayModal, setShowPayModal]          = useState(false);
+  const [showPayModal, setShowPayModal] = useState(false);
 
   if (!isLoggedIn) {
     return (
@@ -101,10 +96,8 @@ const AjouterProduit = () => {
       setCreatedProductId(productId);
 
       if (publishOption === 'paid_flat') {
-        // Seller needs to pay 35 DH → open modal
         setShowPayModal(true);
       } else {
-        // commission option → product pending admin approval
         navigate('/mes-ventes');
       }
     } catch (err) {
@@ -122,18 +115,9 @@ const AjouterProduit = () => {
       <form onSubmit={handleSubmit} className="ajouter-produit-form">
         <h2>Ajouter un produit</h2>
 
-        <input
-          type="text" name="title" value={form.title}
-          onChange={handleChange} placeholder="Titre du produit *" required
-        />
-        <input
-          type="number" name="price" value={form.price}
-          onChange={handleChange} placeholder="Prix en MAD *" required min="0"
-        />
-        <textarea
-          name="description" value={form.description}
-          onChange={handleChange} placeholder="Description (optionnel)" rows={4}
-        />
+        <input type="text" name="title" value={form.title} onChange={handleChange} placeholder="Titre du produit *" required />
+        <input type="number" name="price" value={form.price} onChange={handleChange} placeholder="Prix en MAD *" required min="0" />
+        <textarea name="description" value={form.description} onChange={handleChange} placeholder="Description (optionnel)" rows={4} />
         <select name="status" value={form.status} onChange={handleChange}>
           <option value="Disponible">Disponible</option>
           <option value="Vendu">Vendu</option>
@@ -145,40 +129,25 @@ const AjouterProduit = () => {
           ))}
         </select>
         <input type="file" multiple accept="image/*" onChange={e => setImages([...e.target.files])} />
-        <p style={{ fontSize: '12px', color: '#aaa', marginTop: '-8px' }}>
-          Vous pouvez sélectionner plusieurs photos.
-        </p>
+        <p style={{ fontSize: '12px', color: '#aaa', marginTop: '-8px' }}>Vous pouvez sélectionner plusieurs photos.</p>
 
-        {/* ── Publish option ─────────────────────────────────────────────── */}
         <div style={styles.optionSection}>
           <p style={styles.optionTitle}>Comment voulez-vous publier ?</p>
 
-          <div
-            onClick={() => setPublishOption('paid_flat')}
-            style={{ ...styles.optionCard, ...(publishOption === 'paid_flat' ? styles.optionCardActive : {}) }}
-          >
+          <div onClick={() => setPublishOption('paid_flat')} style={{ ...styles.optionCard, ...(publishOption === 'paid_flat' ? styles.optionCardActive : {}) }}>
             <div style={styles.optionHeader}>
               <span style={styles.optionName}>💳 Publication directe — 35 DH</span>
               <span style={styles.optionRadio}>{publishOption === 'paid_flat' ? '🔵' : '⚪'}</span>
             </div>
-            <p style={styles.optionDesc}>
-              Payez 35 DH une seule fois. Votre annonce est publiée immédiatement.
-              Les acheteurs payent 20 DH pour voir vos coordonnées.
-            </p>
+            <p style={styles.optionDesc}>Payez 35 DH une seule fois. Votre annonce est publiée immédiatement. Les acheteurs payent 20 DH pour voir vos coordonnées.</p>
           </div>
 
-          <div
-            onClick={() => setPublishOption('commission')}
-            style={{ ...styles.optionCard, ...(publishOption === 'commission' ? styles.optionCardActive : {}) }}
-          >
+          <div onClick={() => setPublishOption('commission')} style={{ ...styles.optionCard, ...(publishOption === 'commission' ? styles.optionCardActive : {}) }}>
             <div style={styles.optionHeader}>
               <span style={styles.optionName}>🤝 Publication gratuite — 15% commission</span>
               <span style={styles.optionRadio}>{publishOption === 'commission' ? '🔵' : '⚪'}</span>
             </div>
-            <p style={styles.optionDesc}>
-              Publication gratuite. Jotya prend 15% sur chaque vente réalisée via la plateforme.
-              L'annonce sera validée par un admin.
-            </p>
+            <p style={styles.optionDesc}>Publication gratuite. Jotya prend 15% sur chaque vente réalisée via la plateforme. L'annonce sera validée par un admin.</p>
           </div>
         </div>
 
@@ -204,47 +173,14 @@ const AjouterProduit = () => {
 };
 
 const styles = {
-  optionSection: {
-    margin: '16px 0',
-  },
-  optionTitle: {
-    fontWeight: '700',
-    fontSize: '14px',
-    marginBottom: '10px',
-    color: '#1a1a1a',
-  },
-  optionCard: {
-    border: '2px solid #e5e7eb',
-    borderRadius: '12px',
-    padding: '14px 16px',
-    marginBottom: '10px',
-    cursor: 'pointer',
-    transition: 'border-color 0.2s',
-    background: '#fafafa',
-  },
-  optionCardActive: {
-    borderColor: '#e63946',
-    background: '#fff5f5',
-  },
-  optionHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '6px',
-  },
-  optionName: {
-    fontWeight: '700',
-    fontSize: '14px',
-  },
-  optionRadio: {
-    fontSize: '16px',
-  },
-  optionDesc: {
-    fontSize: '13px',
-    color: '#666',
-    margin: 0,
-    lineHeight: '1.5',
-  },
+  optionSection: { margin: '16px 0' },
+  optionTitle: { fontWeight: '700', fontSize: '14px', marginBottom: '10px', color: '#1a1a1a' },
+  optionCard: { border: '2px solid #e5e7eb', borderRadius: '12px', padding: '14px 16px', marginBottom: '10px', cursor: 'pointer', transition: 'border-color 0.2s', background: '#fafafa' },
+  optionCardActive: { borderColor: '#e63946', background: '#fff5f5' },
+  optionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' },
+  optionName: { fontWeight: '700', fontSize: '14px' },
+  optionRadio: { fontSize: '16px' },
+  optionDesc: { fontSize: '13px', color: '#666', margin: 0, lineHeight: '1.5' },
 };
 
 export default AjouterProduit;

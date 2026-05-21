@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 
 const isDbReady = () => mongoose.connection.readyState === 1;
 
-// Get all products
 export const getProducts = async (req, res) => {
   if (!isDbReady()) return res.status(503).json({ success: false, message: "Service temporairement indisponible. Réessayez dans quelques secondes." });
   try {
@@ -24,7 +23,6 @@ export const getProducts = async (req, res) => {
   }
 };
 
-// Admin: all products
 export const getAllProducts = async (req, res) => {
   if (!isDbReady()) return res.status(503).json({ success: false, message: "Service temporairement indisponible." });
   try {
@@ -35,14 +33,19 @@ export const getAllProducts = async (req, res) => {
   }
 };
 
-// Create product
 export const createProduct = async (req, res) => {
   if (!isDbReady()) return res.status(503).json({ success: false, message: "Service temporairement indisponible." });
-  const { title = '', price = '', description = '', category = '', status = 'Disponible' } = req.body;
+  const { title = '', price = '', description = '', category = '', status = 'Disponible', publishOption = 'commission' } = req.body;
   if (!title || !price || !category) return res.status(400).json({ success: false, message: "Tous les champs obligatoires" });
 
   const images = req.files?.map(file => `/uploads/${file.filename}`) || [];
-  const newProduct = new Product({ title, price, description, category, status, image: images, seller: req.user.id });
+  const newProduct = new Product({
+    title, price, description, category, status,
+    image: images,
+    seller: req.user.id,
+    approvalStatus: 'pending',
+    publishOption: publishOption || 'commission',
+  });
 
   try {
     await newProduct.save();
@@ -53,7 +56,6 @@ export const createProduct = async (req, res) => {
   }
 };
 
-// Update product
 export const updateProduct = async (req, res) => {
   if (!isDbReady()) return res.status(503).json({ success: false, message: "Service temporairement indisponible." });
   const { id } = req.params;
@@ -77,7 +79,6 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-// Delete product
 export const deleteProduct = async (req, res) => {
   if (!isDbReady()) return res.status(503).json({ success: false, message: "Service temporairement indisponible." });
   const { id } = req.params;
@@ -92,7 +93,6 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
-// Get products by user
 export const getProductsByUser = async (req, res) => {
   if (!isDbReady()) return res.status(503).json({ success: false, message: "Service temporairement indisponible." });
   try {
@@ -103,7 +103,6 @@ export const getProductsByUser = async (req, res) => {
   }
 };
 
-// Admin: approve or reject a product
 export const reviewProduct = async (req, res) => {
   if (!isDbReady()) return res.status(503).json({ success: false, message: "Service temporairement indisponible." });
   const { id } = req.params;
