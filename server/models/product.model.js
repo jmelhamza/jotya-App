@@ -1,47 +1,45 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema({
-  title: { type: String, required: true },
+  title:       { type: String, required: true },
   description: { type: String },
-  image: [{ type: String }],
-  price: { type: Number, required: true },
-  seller: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  image:       [{ type: String }],
+  price:       { type: Number, required: true },
+  seller:      { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+
   category: {
     type: String,
     required: true,
     enum: [
-      'Electronique',
-      'Vetements',
-      'Meubles',
-      'Cuisine',
-      'Jouets',
-      'Livres',
-      'Outils',
-      'Accessoires',
-      'Decoration',
-      'Sport',
-      'Sacs',
-      'Chaussures',
-      'Beaute',
-      'Telephonie',
-      'Informatique',
-      'Vehicules',
-      'Immobilier',
-      'Animaux',
-      'Services',
-      'Autres'
-    ]
+      'Electronique','Vetements','Meubles','Cuisine','Jouets',
+      'Livres','Outils','Accessoires','Decoration','Sport','Sacs',
+      'Chaussures','Beaute','Telephonie','Informatique','Vehicules',
+      'Immobilier','Animaux','Services','Autres'
+    ],
   },
+
   status: {
     type: String,
     enum: ['Disponible', 'Vendu'],
-    default: 'Disponible'
+    default: 'Disponible',
   },
+
   approvalStatus: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
-    default: 'pending'
+    default: 'pending',
   },
+
+  // How the seller chose to publish
+  // 'paid_flat'    → seller paid 35 DH — buyer can see contact info after paying 20 DH
+  // 'commission'   → seller published free — platform takes 15% when buyer pays
+  // 'free'         → admin/legacy products (no payment required)
+  publishOption: {
+    type: String,
+    enum: ['paid_flat', 'commission', 'free'],
+    default: 'free',
+  },
+
   createdAt: { type: Date, default: Date.now },
 });
 

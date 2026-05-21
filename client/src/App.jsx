@@ -12,6 +12,7 @@ import Logout from "./pages/Logout";
 import ProductDetail from "./pages/ProductDetail";
 import BecomeSeller from "./pages/BecomeSeller";
 import MesCommandes from "./pages/MesCommandes";
+import MesVentes from "./pages/MesVentes";
 import Messages from "./pages/Messages";
 import Layout from "./componnents/Layout";
 import "./App.css";
@@ -31,6 +32,7 @@ function App() {
         <Route path="/panier" element={<Cart />} />
         <Route path="/mon-compte" element={<MonCompte />} />
         <Route path="/mes-commandes" element={<MesCommandes />} />
+        <Route path="/mes-ventes" element={<MesVentes />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/devenir-vendeur" element={<BecomeSeller />} />
         <Route path="/admin" element={<AdminDashboard />} />

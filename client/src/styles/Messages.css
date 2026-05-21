@@ -394,3 +394,17 @@
     max-width: 85%;
   }
 }
+/* Sending (optimistic) message */
+.message-bubble.sending {
+  opacity: 0.65;
+}
+.sending-indicator {
+  font-size: 11px;
+  margin-left: 4px;
+  opacity: 0.6;
+}
+/* Mobile back button */
+.mobile-back-btn { display: none; }
+@media (max-width: 640px) {
+  .mobile-back-btn { display: block !important; }
+}

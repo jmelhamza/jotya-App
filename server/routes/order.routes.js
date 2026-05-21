@@ -3,23 +3,32 @@ import {
   createOrder,
   getAllOrders,
   getMyOrders,
+  getSellerOrders,
   reviewOrder,
+  sellerReviewOrder,
 } from '../controllers/order.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 import { isAdmin } from '../middlewares/isAdmin.middlewear.js';
+import { isSeller } from '../middlewares/isSeller.middleware.js';
 
 const router = express.Router();
 
-// Customer: create an order
+// BUYER: create an order
 router.post("/", protect, createOrder);
 
-// Customer: get my orders
+// BUYER: get my orders
 router.get("/my", protect, getMyOrders);
 
-// Admin: get all orders
+// SELLER: get orders for my products
+router.get("/seller", protect, isSeller, getSellerOrders);
+
+// SELLER: accept or reject one of their orders
+router.patch("/:id/seller-review", protect, isSeller, sellerReviewOrder);
+
+// ADMIN: get all orders
 router.get("/", protect, isAdmin, getAllOrders);
 
-// Admin: accept or reject an order
+// ADMIN: accept or reject any order
 router.patch("/:id/review", protect, isAdmin, reviewOrder);
 
 export default router;

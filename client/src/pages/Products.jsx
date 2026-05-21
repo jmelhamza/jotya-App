@@ -1,9 +1,7 @@
-import React, { useEffect, useState, useContext, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import '../styles/Products.css';
-import { CartContext } from '../context/CartContext.jsx';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -44,27 +42,25 @@ const sortOptions = [
 ];
 
 const Products = () => {
-  const [products, setProducts] = useState([]);
-  const [filterCat, setFilterCat] = useState('Tous');
+  const [products, setProducts]       = useState([]);
+  const [filterCat, setFilterCat]     = useState('Tous');
   const [filterStatus, setFilterStatus] = useState('');
-  const [filterSort, setFilterSort] = useState('newest');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [search, setSearch] = useState('');
+  const [filterSort, setFilterSort]   = useState('newest');
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState(null);
+  const [search, setSearch]           = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterOpen, setFilterOpen]   = useState(false);
 
   const filterRef = useRef(null);
-  const { addToCart } = useContext(CartContext);
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const res = await axios.get(`${API_BASE_URL}/api/products`);
         setProducts(res.data.data);
-      } catch (err) {
+      } catch {
         setError('Erreur lors du chargement des produits.');
       } finally {
         setLoading(false);
@@ -73,22 +69,15 @@ const Products = () => {
     fetchProducts();
   }, []);
 
-  // Close filter panel when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (filterRef.current && !filterRef.current.contains(e.target)) {
-        setFilterOpen(false);
-      }
+      if (filterRef.current && !filterRef.current.contains(e.target)) setFilterOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const resetFilters = () => {
-    setFilterCat('Tous');
-    setFilterStatus('');
-    setFilterSort('newest');
-  };
+  const resetFilters = () => { setFilterCat('Tous'); setFilterStatus(''); setFilterSort('newest'); };
 
   const activeFiltersCount = [
     filterCat !== 'Tous',
@@ -97,17 +86,17 @@ const Products = () => {
   ].filter(Boolean).length;
 
   let filtered = products.filter(p => {
-    const matchCat = filterCat === 'Tous' || p.category === filterCat;
+    const matchCat    = filterCat === 'Tous' || p.category === filterCat;
     const matchStatus = filterStatus === '' || p.status === filterStatus;
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchStatus && matchSearch;
   });
 
-  if (filterSort === 'price_asc') filtered = [...filtered].sort((a, b) => Number(a.price) - Number(b.price));
-  else if (filterSort === 'price_desc') filtered = [...filtered].sort((a, b) => Number(b.price) - Number(a.price));
+  if (filterSort === 'price_asc')  filtered = [...filtered].sort((a, b) => Number(a.price) - Number(b.price));
+  if (filterSort === 'price_desc') filtered = [...filtered].sort((a, b) => Number(b.price) - Number(a.price));
 
   if (loading) return <p className="loading-msg">Chargement des produits...</p>;
-  if (error) return <p className="error-msg">{error}</p>;
+  if (error)   return <p className="error-msg">{error}</p>;
 
   const selectedCatLabel = categories.find(c => c.value === filterCat);
 
@@ -124,9 +113,7 @@ const Products = () => {
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-
         <span className="divider" />
-
         <div className="filter-wrapper" ref={filterRef}>
           <button
             className={`filter-toggle-btn ${filterOpen ? 'active' : ''} ${activeFiltersCount > 0 ? 'has-filters' : ''}`}
@@ -149,13 +136,10 @@ const Products = () => {
               <div className="filter-panel-header">
                 <span>Filtres</span>
                 {activeFiltersCount > 0 && (
-                  <button className="filter-reset-btn" onClick={resetFilters}>
-                    Réinitialiser
-                  </button>
+                  <button className="filter-reset-btn" onClick={resetFilters}>Réinitialiser</button>
                 )}
               </div>
 
-              {/* Catégorie */}
               <div className="filter-section">
                 <p className="filter-section-title">Catégorie</p>
                 <div className="filter-cat-grid">
@@ -172,7 +156,6 @@ const Products = () => {
                 </div>
               </div>
 
-              {/* État */}
               <div className="filter-section">
                 <p className="filter-section-title">État</p>
                 <div className="filter-chips-row">
@@ -188,7 +171,6 @@ const Products = () => {
                 </div>
               </div>
 
-              {/* Tri */}
               <div className="filter-section">
                 <p className="filter-section-title">Trier par</p>
                 <div className="filter-chips-row">
@@ -212,7 +194,7 @@ const Products = () => {
         </div>
       </div>
 
-      {/* Active filter summary */}
+      {/* Active filter tags */}
       {(filterCat !== 'Tous' || filterStatus !== '') && (
         <div className="active-filters-summary">
           {filterCat !== 'Tous' && (
@@ -230,9 +212,11 @@ const Products = () => {
         </div>
       )}
 
-      {/* Results count */}
-      <p className="results-count">{filtered.length} produit{filtered.length !== 1 ? 's' : ''} trouvé{filtered.length !== 1 ? 's' : ''}</p>
+      <p className="results-count">
+        {filtered.length} produit{filtered.length !== 1 ? 's' : ''} trouvé{filtered.length !== 1 ? 's' : ''}
+      </p>
 
+      {/* ── Product grid ── */}
       <div className="products-grid">
         {filtered.length === 0 ? (
           <p>Aucun produit disponible dans cette catégorie.</p>
@@ -244,7 +228,7 @@ const Products = () => {
               onClick={() => navigate(`/produits/${product._id}`)}
               style={{ cursor: 'pointer' }}
             >
-              {product.image && product.image.length > 0 && (
+              {product.image?.length > 0 && (
                 <img
                   src={`${API_BASE_URL}${product.image[0]}`}
                   alt={product.title}
@@ -252,13 +236,15 @@ const Products = () => {
                   onClick={e => { e.stopPropagation(); setSelectedImage(`${API_BASE_URL}${product.image[0]}`); }}
                 />
               )}
+
               <h3>{product.title}</h3>
               <p className="price">{product.price} MAD</p>
               <p className="category"><strong>Catégorie :</strong> {product.category}</p>
 
               {product.seller ? (
                 <p>
-                  Vendeur: <a href={`/vendeur/${product.seller._id}`} onClick={e => e.stopPropagation()}>
+                  Vendeur :{' '}
+                  <a href={`/vendeur/${product.seller._id}`} onClick={e => e.stopPropagation()}>
                     {product.seller.shopName || product.seller.name}
                   </a>
                 </p>
@@ -273,13 +259,20 @@ const Products = () => {
                 </span>
               </p>
 
-              {product.status === 'Disponible' && product.seller?.role === 'admin' && (
-                <button
-                  className="add-to-cart-btn"
-                  onClick={e => { e.stopPropagation(); addToCart(product); }}
-                >
-                  Ajouter au panier
-                </button>
+              {/* 🔒 Locked info hint */}
+              {product.status === 'Disponible' && (
+                <div style={{
+                  marginTop: '10px',
+                  padding: '8px 12px',
+                  background: '#fafafa',
+                  border: '1px dashed #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  color: '#888',
+                  textAlign: 'center',
+                }}>
+                  🔒 Voir les coordonnées — 20 DH
+                </div>
               )}
             </div>
           ))

@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import PaymentModal from '../componnents/PaymentModal';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -10,75 +11,86 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const { isLoggedIn, user } = useAuth();
 
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [product, setProduct]       = useState(null);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState(null);
   const [selectedImg, setSelectedImg] = useState(0);
-  const [message, setMessage] = useState('');
-  const [orderMessage, setOrderMessage] = useState('');
-  const [orderSent, setOrderSent] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [contactingVendeur, setContactingVendeur] = useState(false);
 
+  // Seller info state
+  const [sellerInfo, setSellerInfo]     = useState(null);
+  const [hasAccess, setHasAccess]       = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(false);
+  const [showPayModal, setShowPayModal] = useState(false);
+
+  // ─── Fetch product ────────────────────────────────────────────────────────
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetch = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/products`);
-        const found = res.data.data.find(p => p._id === id);
-        if (!found) setError('Produit introuvable.');
-        else setProduct(found);
+        const res = await axios.get(`${API_BASE_URL}/api/products/${id}`);
+        setProduct(res.data.data || res.data);
       } catch {
-        setError('Erreur lors du chargement du produit.');
+        // fallback: fetch all and find
+        try {
+          const res = await axios.get(`${API_BASE_URL}/api/products`);
+          const found = (res.data.data || res.data).find(p => p._id === id);
+          if (found) setProduct(found);
+          else setError('Produit introuvable.');
+        } catch {
+          setError('Erreur lors du chargement.');
+        }
       } finally {
         setLoading(false);
       }
     };
-    fetchProduct();
+    fetch();
   }, [id]);
 
-  const handleContactSeller = async () => {
-    if (!isLoggedIn) { navigate('/connexion'); return; }
-    if (!product?.seller) return;
-    setContactingVendeur(true);
+  // ─── Check if buyer already paid ─────────────────────────────────────────
+  const checkAccess = useCallback(async () => {
+    if (!isLoggedIn || !id) return;
+    setCheckingAccess(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.post(
-        `${API_BASE_URL}/api/messages/conversations`,
-        { sellerId: product.seller._id, productId: product._id },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      navigate(`/messages?convId=${res.data.data._id}`);
-    } catch (err) {
-      alert('Erreur lors de la création de la conversation.');
-    } finally {
-      setContactingVendeur(false);
-    }
+      const res = await axios.get(`${API_BASE_URL}/api/payments/access/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data.hasAccess) {
+        setHasAccess(true);
+        fetchSellerInfo();
+      }
+    } catch {}
+    finally { setCheckingAccess(false); }
+  }, [id, isLoggedIn]);
+
+  useEffect(() => { checkAccess(); }, [checkAccess]);
+
+  const fetchSellerInfo = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API_BASE_URL}/api/payments/seller-info/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSellerInfo(res.data.seller);
+      setHasAccess(true);
+    } catch {}
   };
 
-  const handleOrder = async () => {    if (!isLoggedIn) {
-      navigate('/connexion');
-      return;
-    }
-    setSending(true);
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${API_BASE_URL}/api/orders`,
-        { productId: product._id, quantity: 1, message: orderMessage },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setOrderSent(true);
-      setMessage('Votre demande a été envoyée ! L\'admin vous contactera bientôt.');
-    } catch (err) {
-      setMessage(err.response?.data?.message || 'Erreur lors de l\'envoi de la demande.');
-    } finally {
-      setSending(false);
-    }
+  // Called after successful PayPal payment
+  const handlePaymentSuccess = () => {
+    setShowPayModal(false);
+    setHasAccess(true);
+    fetchSellerInfo();
   };
 
   if (loading) return <p style={{ padding: '40px', textAlign: 'center' }}>Chargement...</p>;
-  if (error) return <p style={{ padding: '40px', textAlign: 'center', color: 'red' }}>{error}</p>;
+  if (error)   return <p style={{ padding: '40px', textAlign: 'center', color: 'red' }}>{error}</p>;
   if (!product) return null;
+
+  const isSold       = product.status === 'Vendu';
+  const myId         = user?.id || user?._id;
+  const isOwnProduct = myId && product.seller && (
+    (product.seller._id || product.seller).toString() === myId.toString()
+  );
 
   return (
     <div style={{ maxWidth: '900px', margin: '40px auto', padding: '0 20px' }}>
@@ -90,14 +102,15 @@ const ProductDetail = () => {
       </button>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
-        {/* Images */}
+
+        {/* ── Images ─────────────────────────────────────────────────────── */}
         <div>
-          {product.image && product.image.length > 0 && (
+          {product.image?.length > 0 && (
             <>
               <img
                 src={`${API_BASE_URL}${product.image[selectedImg]}`}
                 alt={product.title}
-                style={{ width: '100%', borderRadius: '12px', objectFit: 'cover', maxHeight: '400px' }}
+                style={{ width: '100%', borderRadius: '14px', objectFit: 'cover', maxHeight: '400px' }}
               />
               {product.image.length > 1 && (
                 <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
@@ -105,15 +118,12 @@ const ProductDetail = () => {
                     <img
                       key={i}
                       src={`${API_BASE_URL}${img}`}
-                      alt={`img-${i}`}
+                      alt=""
                       onClick={() => setSelectedImg(i)}
                       style={{
-                        width: '70px',
-                        height: '70px',
-                        objectFit: 'cover',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        border: selectedImg === i ? '2px solid #333' : '2px solid transparent'
+                        width: '68px', height: '68px', objectFit: 'cover',
+                        borderRadius: '8px', cursor: 'pointer',
+                        border: selectedImg === i ? '2px solid #e63946' : '2px solid transparent',
                       }}
                     />
                   ))}
@@ -123,120 +133,177 @@ const ProductDetail = () => {
           )}
         </div>
 
-        {/* Info */}
+        {/* ── Info ───────────────────────────────────────────────────────── */}
         <div>
-          <h1 style={{ fontSize: '24px', marginBottom: '10px' }}>{product.title}</h1>
-          <p style={{ fontSize: '28px', fontWeight: '700', color: '#e63946', marginBottom: '10px' }}>
+          <h1 style={{ fontSize: '24px', marginBottom: '10px', color: '#1a1a1a' }}>{product.title}</h1>
+
+          <p style={{ fontSize: '30px', fontWeight: '800', color: '#e63946', margin: '0 0 12px' }}>
             {product.price} MAD
           </p>
-          <p style={{ marginBottom: '6px' }}>
-            <strong>Catégorie :</strong> {product.category}
-          </p>
-          <p style={{ marginBottom: '6px' }}>
-            <strong>État :</strong>{' '}
-            <span style={{ color: product.status === 'Disponible' ? 'green' : 'gray' }}>
-              {product.status}
+
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
+            <span style={styles.tag}>{product.category}</span>
+            <span style={{ ...styles.tag, background: isSold ? '#fee2e2' : '#dcfce7', color: isSold ? '#991b1b' : '#166534' }}>
+              {isSold ? '🔴 Vendu' : '🟢 Disponible'}
             </span>
-          </p>
+          </div>
+
           {product.description && (
-            <p style={{ marginBottom: '16px', lineHeight: '1.6', color: '#555' }}>
+            <p style={{ lineHeight: '1.7', color: '#555', marginBottom: '20px' }}>
               {product.description}
             </p>
           )}
 
-          {product.seller && (
-            <div style={{ background: '#f8f8f8', borderRadius: '10px', padding: '14px', marginBottom: '20px' }}>
-              <p style={{ fontWeight: '600', marginBottom: '6px' }}>
-                Vendeur : {product.seller.shopName || product.seller.name}
-              </p>
-              {product.seller.phone && <p>📞 {product.seller.phone}</p>}
-              {product.seller.whatsapp && (
-                <p>
-                  <a href={`https://wa.me/${product.seller.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
-                    💬 WhatsApp
-                  </a>
-                </p>
-              )}
-              {product.seller.facebook && (
-                <p>
-                  <a href={product.seller.facebook} target="_blank" rel="noopener noreferrer">
-                    Facebook
-                  </a>
-                </p>
-              )}
-              <Link to={`/vendeur/${product.seller._id}`} style={{ fontSize: '13px', color: '#888' }}>
-                Voir le profil du vendeur →
-              </Link>
-            </div>
-          )}
+          {/* ── Seller contact block ───────────────────────────────────── */}
+          <div style={styles.sellerBox}>
+            <p style={{ fontWeight: '700', marginBottom: '10px', fontSize: '15px' }}>
+              📋 Coordonnées du vendeur
+            </p>
 
-          {/* Contact seller button */}
-          {product.status !== 'Vendu' && product.seller && user?._id !== product.seller._id && (
-            <button
-              onClick={handleContactSeller}
-              disabled={contactingVendeur}
-              style={{
-                width: '100%',
-                padding: '12px',
-                background: '#fff',
-                color: '#e63946',
-                border: '2px solid #e63946',
-                borderRadius: '10px',
-                fontSize: '15px',
-                fontWeight: '600',
-                cursor: contactingVendeur ? 'not-allowed' : 'pointer',
-                marginBottom: '10px',
-              }}
-            >
-              {contactingVendeur ? 'Connexion...' : '💬 Contacter le vendeur'}
-            </button>
-          )}
+            {isOwnProduct ? (
+              // Owner sees their own info always
+              <SellerInfoDisplay seller={product.seller} apiBase={API_BASE_URL} />
 
-          {product.status === 'Vendu' ? (
-            <p style={{ color: 'gray', fontStyle: 'italic' }}>Ce produit est déjà vendu.</p>
-          ) : orderSent ? (
-            <p style={{ color: 'green', fontWeight: '600' }}>{message}</p>
-          ) : (
-            <>
-              <textarea
-                placeholder="Message au vendeur (optionnel)..."
-                value={orderMessage}
-                onChange={e => setOrderMessage(e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '80px',
-                  padding: '10px',
-                  borderRadius: '8px',
-                  border: '1px solid #ccc',
-                  marginBottom: '12px',
-                  resize: 'vertical',
-                  fontFamily: 'inherit'
-                }}
-              />
-              <button
-                onClick={handleOrder}
-                disabled={sending}
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  background: '#e63946',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '10px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  cursor: sending ? 'not-allowed' : 'pointer'
-                }}
-              >
-                {sending ? 'Envoi en cours...' : isLoggedIn ? 'Envoyer une demande d\'achat' : 'Se connecter pour commander'}
-              </button>
-              {message && <p style={{ color: 'red', marginTop: '10px' }}>{message}</p>}
-            </>
+            ) : isSold ? (
+              <p style={{ color: '#999', fontSize: '14px' }}>Produit vendu — coordonnées non disponibles.</p>
+
+            ) : hasAccess && sellerInfo ? (
+              // Buyer already paid — show info
+              <SellerInfoDisplay seller={sellerInfo} apiBase={API_BASE_URL} />
+
+            ) : checkingAccess ? (
+              <p style={{ color: '#aaa', fontSize: '14px' }}>Vérification...</p>
+
+            ) : (
+              // Locked — needs payment
+              <div style={styles.lockedBox}>
+                <div style={styles.lockIcon}>🔒</div>
+                <p style={{ fontWeight: '700', fontSize: '15px', margin: '0 0 4px' }}>
+                  Informations masquées
+                </p>
+                <p style={{ color: '#888', fontSize: '13px', margin: '0 0 14px' }}>
+                  Payez <strong>20 DH</strong> pour voir le numéro de téléphone, WhatsApp et les coordonnées complètes du vendeur.
+                </p>
+                {!isLoggedIn ? (
+                  <button onClick={() => navigate('/connexion')} style={styles.btnPay}>
+                    🔐 Se connecter pour continuer
+                  </button>
+                ) : (
+                  <button onClick={() => setShowPayModal(true)} style={styles.btnPay}>
+                    Voir les coordonnées — 20 DH
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Sold banner */}
+          {isSold && (
+            <div style={styles.soldBanner}>🚫 Ce produit est déjà vendu</div>
           )}
         </div>
       </div>
+
+      {/* ── PayPal Modal ──────────────────────────────────────────────────── */}
+      {showPayModal && (
+        <PaymentModal
+          type="reveal_seller"
+          productId={id}
+          amount={20}
+          label="Voir les coordonnées du vendeur"
+          onSuccess={handlePaymentSuccess}
+          onClose={() => setShowPayModal(false)}
+        />
+      )}
     </div>
   );
+};
+
+// ─── Sub-component: display revealed seller info ──────────────────────────────
+const SellerInfoDisplay = ({ seller, apiBase }) => {
+  if (!seller) return null;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <p style={{ margin: 0, fontWeight: '600' }}>
+        👤 {seller.shopName || seller.name}
+      </p>
+      {seller.phone && (
+        <a href={`tel:${seller.phone}`} style={styles.contactLink}>
+          📞 {seller.phone}
+        </a>
+      )}
+      {seller.whatsapp && (
+        <a
+          href={`https://wa.me/${seller.whatsapp.replace(/\D/g, '')}`}
+          target="_blank" rel="noopener noreferrer"
+          style={{ ...styles.contactLink, color: '#25d366' }}
+        >
+          💬 WhatsApp — {seller.whatsapp}
+        </a>
+      )}
+      {seller.facebook && (
+        <a href={seller.facebook} target="_blank" rel="noopener noreferrer" style={styles.contactLink}>
+          🔵 Facebook
+        </a>
+      )}
+      {seller.email && (
+        <a href={`mailto:${seller.email}`} style={styles.contactLink}>
+          ✉️ {seller.email}
+        </a>
+      )}
+    </div>
+  );
+};
+
+const styles = {
+  tag: {
+    padding: '4px 12px',
+    borderRadius: '20px',
+    fontSize: '13px',
+    background: '#f3f4f6',
+    color: '#374151',
+    fontWeight: '500',
+  },
+  sellerBox: {
+    background: '#fafafa',
+    border: '1px solid #e5e7eb',
+    borderRadius: '12px',
+    padding: '16px',
+    marginBottom: '16px',
+  },
+  lockedBox: {
+    textAlign: 'center',
+    padding: '10px 0',
+  },
+  lockIcon: {
+    fontSize: '32px',
+    marginBottom: '8px',
+  },
+  btnPay: {
+    width: '100%',
+    padding: '13px',
+    background: '#e63946',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '10px',
+    fontSize: '15px',
+    fontWeight: '700',
+    cursor: 'pointer',
+  },
+  contactLink: {
+    color: '#1d4ed8',
+    textDecoration: 'none',
+    fontWeight: '500',
+    fontSize: '14px',
+  },
+  soldBanner: {
+    background: '#f3f4f6',
+    color: '#6b7280',
+    padding: '14px',
+    borderRadius: '10px',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
 };
 
 export default ProductDetail;

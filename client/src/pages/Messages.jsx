@@ -28,7 +28,7 @@ const Messages = () => {
   const [searchParams] = useSearchParams();
 
   const [conversations, setConversations] = useState([]);
-  const [activeConv, setActiveConv] = useState(null);
+  const [activeConvId, setActiveConvId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
@@ -38,92 +38,114 @@ const Messages = () => {
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
 
   const messagesEndRef = useRef(null);
-  const pollRef = useRef(null);
-  const token = localStorage.getItem('token');
+  // Refs to keep latest values inside intervals without recreating them
+  const activeConvIdRef = useRef(null);
+  const tokenRef = useRef(localStorage.getItem('token'));
+  const msgPollRef = useRef(null);
+  const convPollRef = useRef(null);
+
+  // Keep ref in sync
+  useEffect(() => { activeConvIdRef.current = activeConvId; }, [activeConvId]);
 
   // Redirect if not logged in
   useEffect(() => {
     if (!isLoggedIn) navigate('/connexion');
   }, [isLoggedIn]);
 
-  // Load conversations
-  const loadConversations = useCallback(async () => {
+  // ─── Fetch conversations (no spinner — silent refresh) ───────────────────────
+  const fetchConversations = useCallback(async (showLoader = false) => {
+    if (showLoader) setLoadingConvs(true);
     try {
       const res = await axios.get(`${API_BASE_URL}/api/messages/conversations`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${tokenRef.current}` },
       });
       setConversations(res.data.data || []);
-    } catch (err) {
-      console.error('Erreur conversations:', err.message);
-    } finally {
-      setLoadingConvs(false);
-    }
-  }, [token]);
+    } catch {}
+    finally { if (showLoader) setLoadingConvs(false); }
+  }, []);
 
+  // Initial load + poll sidebar every 5s
   useEffect(() => {
-    loadConversations();
-  }, [loadConversations]);
+    fetchConversations(true);
+    convPollRef.current = setInterval(() => fetchConversations(false), 5000);
+    return () => clearInterval(convPollRef.current);
+  }, [fetchConversations]);
 
-  // Auto-open conversation if ?convId= or ?sellerId= in URL
+  // ─── Auto-open conversation from URL ?convId= ────────────────────────────────
   useEffect(() => {
     const convId = searchParams.get('convId');
-    if (convId && conversations.length > 0) {
+    if (convId && conversations.length > 0 && !activeConvId) {
       const found = conversations.find(c => c._id === convId);
       if (found) openConversation(found);
     }
   }, [searchParams, conversations]);
 
-  // Open a conversation and load messages
-  const openConversation = async (conv) => {
-    setActiveConv(conv);
-    setMobileChatOpen(true);
-    setLoadingMsgs(true);
-    setMessages([]);
-    clearInterval(pollRef.current);
-
+  // ─── Fetch messages for active conversation ──────────────────────────────────
+  const fetchMessages = useCallback(async (convId, isBackground = false) => {
+    if (!convId) return;
+    if (!isBackground) setLoadingMsgs(true);
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/messages/conversations/${conv._id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await axios.get(`${API_BASE_URL}/api/messages/conversations/${convId}`, {
+        headers: { Authorization: `Bearer ${tokenRef.current}` },
       });
-      setMessages(res.data.data.messages || []);
-      // Update unread count in list
-      setConversations(prev =>
-        prev.map(c => c._id === conv._id ? { ...c, myUnread: 0 } : c)
-      );
-    } catch (err) {
-      console.error('Erreur messages:', err.message);
-    } finally {
-      setLoadingMsgs(false);
-    }
+      const newMsgs = res.data.data.messages || [];
 
-    // Poll for new messages every 3s
-    pollRef.current = setInterval(async () => {
-      try {
-        const res = await axios.get(`${API_BASE_URL}/api/messages/conversations/${conv._id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setMessages(res.data.data.messages || []);
-      } catch {}
+      setMessages(prev => {
+        // Keep optimistic (temp) messages that haven't been confirmed yet
+        const temps = prev.filter(m => m.temp);
+        const confirmed = newMsgs.filter(nm => !temps.find(t => t.text === nm.text && Math.abs(new Date(t.createdAt) - new Date(nm.createdAt)) < 5000));
+        return [...newMsgs, ...temps.filter(t => !confirmed.find(c => c.text === t.text))];
+      });
+
+      // Mark as read in sidebar
+      setConversations(prev =>
+        prev.map(c => c._id === convId ? { ...c, myUnread: 0 } : c)
+      );
+    } catch {}
+    finally { if (!isBackground) setLoadingMsgs(false); }
+  }, []);
+
+  // ─── Open a conversation ─────────────────────────────────────────────────────
+  const openConversation = (conv) => {
+    // Stop previous message poll
+    clearInterval(msgPollRef.current);
+
+    setActiveConvId(conv._id);
+    setMobileChatOpen(true);
+    setMessages([]); // Clear only when switching conversation
+    fetchMessages(conv._id, false);
+
+    // Poll messages every 3s
+    msgPollRef.current = setInterval(() => {
+      fetchMessages(activeConvIdRef.current, true);
     }, 3000);
   };
 
-  // Stop polling on unmount
-  useEffect(() => () => clearInterval(pollRef.current), []);
+  // Cleanup on unmount
+  useEffect(() => () => {
+    clearInterval(msgPollRef.current);
+    clearInterval(convPollRef.current);
+  }, []);
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom — only when new messages arrive, not on every render
+  const prevMsgCount = useRef(0);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length > prevMsgCount.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+    prevMsgCount.current = messages.length;
   }, [messages]);
 
+  // ─── Send message ────────────────────────────────────────────────────────────
   const sendMessage = async () => {
-    if (!inputText.trim() || !activeConv || sending) return;
+    if (!inputText.trim() || !activeConvId || sending) return;
     const text = inputText.trim();
     setInputText('');
     setSending(true);
 
-    // Optimistic update
+    const tempId = 'temp-' + Date.now();
     const tempMsg = {
-      _id: 'temp-' + Date.now(),
+      _id: tempId,
       text,
       sender: { _id: user._id || user.id, name: user.name },
       createdAt: new Date().toISOString(),
@@ -133,17 +155,17 @@ const Messages = () => {
 
     try {
       const res = await axios.post(
-        `${API_BASE_URL}/api/messages/conversations/${activeConv._id}/messages`,
+        `${API_BASE_URL}/api/messages/conversations/${activeConvId}/messages`,
         { text },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${tokenRef.current}` } }
       );
-      setMessages(prev => prev.map(m => m._id === tempMsg._id ? res.data.data : m));
-      // Update last message preview in sidebar
+      // Replace temp with real message
+      setMessages(prev => prev.map(m => m._id === tempId ? res.data.data : m));
       setConversations(prev =>
-        prev.map(c => c._id === activeConv._id ? { ...c, lastMessage: text, lastMessageAt: new Date() } : c)
+        prev.map(c => c._id === activeConvId ? { ...c, lastMessage: text, lastMessageAt: new Date() } : c)
       );
-    } catch (err) {
-      setMessages(prev => prev.filter(m => m._id !== tempMsg._id));
+    } catch {
+      setMessages(prev => prev.filter(m => m._id !== tempId));
       alert('Erreur lors de l\'envoi du message.');
     } finally {
       setSending(false);
@@ -151,13 +173,9 @@ const Messages = () => {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
-  // Get the other participant (not me)
   const getOtherParticipant = (conv) => {
     const myId = user?._id || user?.id;
     return conv.participants?.find(p => p._id !== myId) || conv.participants?.[0];
@@ -170,6 +188,7 @@ const Messages = () => {
   });
 
   const myId = user?._id || user?.id;
+  const activeConv = conversations.find(c => c._id === activeConvId) || null;
 
   return (
     <div className="messages-page">
@@ -196,7 +215,7 @@ const Messages = () => {
               return (
                 <div
                   key={conv._id}
-                  className={`conv-item ${activeConv?._id === conv._id ? 'active' : ''}`}
+                  className={`conv-item ${activeConvId === conv._id ? 'active' : ''}`}
                   onClick={() => openConversation(conv)}
                 >
                   {other?.image
@@ -205,18 +224,12 @@ const Messages = () => {
                   }
                   <div className="conv-info">
                     <div className="conv-name">{other?.shopName || other?.name}</div>
-                    {conv.product && (
-                      <div className="conv-product">📦 {conv.product.title}</div>
-                    )}
-                    {conv.lastMessage && (
-                      <div className="conv-last">{conv.lastMessage}</div>
-                    )}
+                    {conv.product && <div className="conv-product">📦 {conv.product.title}</div>}
+                    {conv.lastMessage && <div className="conv-last">{conv.lastMessage}</div>}
                   </div>
                   <div className="conv-meta">
                     <span className="conv-time">{conv.lastMessageAt ? formatTime(conv.lastMessageAt) : ''}</span>
-                    {conv.myUnread > 0 && (
-                      <span className="unread-badge">{conv.myUnread}</span>
-                    )}
+                    {conv.myUnread > 0 && <span className="unread-badge">{conv.myUnread}</span>}
                   </div>
                 </div>
               );
@@ -237,9 +250,8 @@ const Messages = () => {
           <>
             {/* Chat header */}
             <div className="chat-header">
-              {/* Back button on mobile */}
               <button
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, display: 'none' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}
                 className="mobile-back-btn"
                 onClick={() => setMobileChatOpen(false)}
               >
@@ -293,8 +305,9 @@ const Messages = () => {
                           {msg.sender?.shopName || msg.sender?.name}
                         </span>
                       )}
-                      <div className={`message-bubble ${isMe ? 'mine' : 'theirs'} ${msg.temp ? 'opacity-50' : ''}`}>
+                      <div className={`message-bubble ${isMe ? 'mine' : 'theirs'} ${msg.temp ? 'sending' : ''}`}>
                         {msg.text}
+                        {msg.temp && <span className="sending-indicator"> ✓</span>}
                       </div>
                       <span className="bubble-time">{formatTime(msg.createdAt)}</span>
                     </div>

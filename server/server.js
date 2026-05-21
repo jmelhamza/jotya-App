@@ -13,6 +13,7 @@ import { userRoutes } from "./routes/user.routes.js";
 import authRoutes from './routes/auth.router.js';
 import orderRoutes from './routes/order.routes.js';
 import messageRoutes from './routes/message.routes.js';
+import paymentRoutes from './routes/payment.routes.js';
 import cors from "cors";
 import fs from 'fs';
 
@@ -47,6 +48,7 @@ app.use("/api/users", userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.listen(PORT, () => {

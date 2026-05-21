@@ -114,10 +114,16 @@ const Navbar = () => {
                     <div className="dropdown-divider" />
                     <div className="dropdown-section-label">Vente</div>
                     {user?.role === 'seller' && (
-                      <Link to="/ajouter-produit" onClick={close}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Vendre un produit
-                      </Link>
+                      <>
+                        <Link to="/mes-ventes" onClick={close}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                          Mes ventes
+                        </Link>
+                        <Link to="/ajouter-produit" onClick={close}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                          Vendre un produit
+                        </Link>
+                      </>
                     )}
                     {user?.role === 'user' && (
                       <Link to="/devenir-vendeur" onClick={close}>
