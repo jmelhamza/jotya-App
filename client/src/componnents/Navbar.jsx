@@ -108,12 +108,12 @@ const Navbar = () => {
                   {unreadCount > 0 && <span className="dropdown-badge">{unreadCount}</span>}
                 </Link>
 
-                {/* Section 2 — Vente (seller ou user) */}
-                {(user?.role === 'seller' || user?.role === 'user') && (
+                {/* Section 2 — Vente (seller, admin ou user) */}
+                {(user?.role === 'seller' || user?.role === 'user' || user?.role === 'admin') && (
                   <>
                     <div className="dropdown-divider" />
                     <div className="dropdown-section-label">Vente</div>
-                    {user?.role === 'seller' && (
+                    {(user?.role === 'seller' || user?.role === 'admin') && (
                       <>
                         <Link to="/mes-ventes" onClick={close}>
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
@@ -129,12 +129,6 @@ const Navbar = () => {
                       <Link to="/devenir-vendeur" onClick={close}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8l-2 4h12l-2-4z"/></svg>
                         Devenir vendeur
-                      </Link>
-                    )}
-                    {user?.role === 'admin' && (
-                      <Link to="/ajouter-produit" onClick={close}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Ajouter produit
                       </Link>
                     )}
                   </>

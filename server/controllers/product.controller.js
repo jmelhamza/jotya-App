@@ -39,11 +39,12 @@ export const createProduct = async (req, res) => {
   if (!title || !price || !category) return res.status(400).json({ success: false, message: "Tous les champs obligatoires" });
 
   const images = req.files?.map(file => `/uploads/${file.filename}`) || [];
+  const isAdmin = req.user.role === 'admin';
   const newProduct = new Product({
     title, price, description, category, status,
     image: images,
     seller: req.user.id,
-    approvalStatus: 'pending',
+    approvalStatus: isAdmin ? 'approved' : 'pending',
     publishOption: publishOption || 'commission',
   });
 

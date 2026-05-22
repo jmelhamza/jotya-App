@@ -59,6 +59,8 @@ const AjouterProduit = () => {
     );
   }
 
+  const isAdmin = user?.role === 'admin';
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
@@ -72,7 +74,7 @@ const AjouterProduit = () => {
       setError('Titre, prix et catégorie sont obligatoires.');
       return;
     }
-    if (!publishOption) {
+    if (!isAdmin && !publishOption) {
       setError('Choisissez une option de publication.');
       return;
     }
@@ -83,7 +85,7 @@ const AjouterProduit = () => {
     formData.append('description', form.description);
     formData.append('status', form.status);
     formData.append('category', form.category);
-    formData.append('publishOption', publishOption);
+    formData.append('publishOption', isAdmin ? 'commission' : publishOption);
     images.forEach(img => formData.append('image', img));
 
     try {
@@ -95,7 +97,7 @@ const AjouterProduit = () => {
       const productId = res.data.data?._id || res.data._id;
       setCreatedProductId(productId);
 
-      if (publishOption === 'paid_flat') {
+      if (!isAdmin && publishOption === 'paid_flat') {
         setShowPayModal(true);
       } else {
         navigate('/mes-ventes');
@@ -131,30 +133,32 @@ const AjouterProduit = () => {
         <input type="file" multiple accept="image/*" onChange={e => setImages([...e.target.files])} />
         <p style={{ fontSize: '12px', color: '#aaa', marginTop: '-8px' }}>Vous pouvez sélectionner plusieurs photos.</p>
 
-        <div style={styles.optionSection}>
-          <p style={styles.optionTitle}>Comment voulez-vous publier ?</p>
+        {!isAdmin && (
+          <div style={styles.optionSection}>
+            <p style={styles.optionTitle}>Comment voulez-vous publier ?</p>
 
-          <div onClick={() => setPublishOption('paid_flat')} style={{ ...styles.optionCard, ...(publishOption === 'paid_flat' ? styles.optionCardActive : {}) }}>
-            <div style={styles.optionHeader}>
-              <span style={styles.optionName}>💳 Publication directe — 35 DH</span>
-              <span style={styles.optionRadio}>{publishOption === 'paid_flat' ? '🔵' : '⚪'}</span>
+            <div onClick={() => setPublishOption('paid_flat')} style={{ ...styles.optionCard, ...(publishOption === 'paid_flat' ? styles.optionCardActive : {}) }}>
+              <div style={styles.optionHeader}>
+                <span style={styles.optionName}>💳 Publication directe — 35 DH</span>
+                <span style={styles.optionRadio}>{publishOption === 'paid_flat' ? '🔵' : '⚪'}</span>
+              </div>
+              <p style={styles.optionDesc}>Payez 35 DH une seule fois. Votre annonce est publiée immédiatement. Les acheteurs payent 20 DH pour voir vos coordonnées.</p>
             </div>
-            <p style={styles.optionDesc}>Payez 35 DH une seule fois. Votre annonce est publiée immédiatement. Les acheteurs payent 20 DH pour voir vos coordonnées.</p>
-          </div>
 
-          <div onClick={() => setPublishOption('commission')} style={{ ...styles.optionCard, ...(publishOption === 'commission' ? styles.optionCardActive : {}) }}>
-            <div style={styles.optionHeader}>
-              <span style={styles.optionName}>🤝 Publication gratuite — 15% commission</span>
-              <span style={styles.optionRadio}>{publishOption === 'commission' ? '🔵' : '⚪'}</span>
+            <div onClick={() => setPublishOption('commission')} style={{ ...styles.optionCard, ...(publishOption === 'commission' ? styles.optionCardActive : {}) }}>
+              <div style={styles.optionHeader}>
+                <span style={styles.optionName}>🤝 Publication gratuite — 15% commission</span>
+                <span style={styles.optionRadio}>{publishOption === 'commission' ? '🔵' : '⚪'}</span>
+              </div>
+              <p style={styles.optionDesc}>Publication gratuite. Jotya prend 15% sur chaque vente réalisée via la plateforme. L'annonce sera validée par un admin.</p>
             </div>
-            <p style={styles.optionDesc}>Publication gratuite. Jotya prend 15% sur chaque vente réalisée via la plateforme. L'annonce sera validée par un admin.</p>
           </div>
-        </div>
+        )}
 
         {error && <p className="error">{error}</p>}
 
         <button type="submit">
-          {publishOption === 'paid_flat' ? 'Continuer vers le paiement →' : 'Soumettre le produit'}
+          {isAdmin ? 'Publier le produit' : (publishOption === 'paid_flat' ? 'Continuer vers le paiement →' : 'Soumettre le produit')}
         </button>
       </form>
 
