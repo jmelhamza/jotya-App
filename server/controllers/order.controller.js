@@ -1,5 +1,10 @@
 import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
+import Conversation from "../models/conversation.model.js";
+import Message from "../models/message.model.js";
+import User from "../models/user.model.js";
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://www.jotya.xyz';
 
 // ─── BUYER: create an order ───────────────────────────────────────────────────
 export const createOrder = async (req, res) => {
@@ -165,6 +170,52 @@ export const reviewOrder = async (req, res) => {
         { product: order.product._id, status: 'pending', _id: { $ne: order._id } },
         { status: 'rejected' }
       );
+
+      // ── Send notification to buyer via internal messages ──
+      try {
+        const admin = await User.findOne({ role: 'admin' });
+        if (admin) {
+          const adminId  = admin._id;
+          const buyerId  = order.buyer._id;
+          const productTitle = order.product.title || 'ce produit';
+          const productLink  = `${FRONTEND_URL}/products/${order.product._id}`;
+
+          let conv = await Conversation.findOne({
+            participants: { $all: [adminId, buyerId] },
+          });
+          if (!conv) {
+            conv = new Conversation({
+              participants: [adminId, buyerId],
+              product: order.product._id,
+              unreadCount: { [adminId.toString()]: 0, [buyerId.toString()]: 0 },
+            });
+          }
+
+          const notifText =
+            `🎉 Votre commande a été acceptée !\n\n` +
+            `Produit : "${productTitle}"\n` +
+            `Lien du produit : ${productLink}\n\n` +
+            `Contactez le vendeur directement via la page du produit pour finaliser la transaction.`;
+
+          conv.lastMessage   = notifText.slice(0, 80);
+          conv.lastMessageAt = new Date();
+          const currentUnread = conv.unreadCount?.get?.(buyerId.toString()) || 0;
+          conv.unreadCount = {
+            ...(conv.unreadCount ? Object.fromEntries(conv.unreadCount) : {}),
+            [buyerId.toString()]: currentUnread + 1,
+          };
+          await conv.save();
+
+          await Message.create({
+            conversation: conv._id,
+            sender: adminId,
+            text: notifText,
+            read: false,
+          });
+        }
+      } catch (notifErr) {
+        console.error('Notification order accepted (non-blocking):', notifErr.message);
+      }
     }
 
     res.status(200).json({ success: true, data: order });

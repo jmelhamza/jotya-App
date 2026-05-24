@@ -123,9 +123,15 @@ export const confirmPayment = async (req, res) => {
       }
 
       // notification message text
+      const FRONTEND = process.env.FRONTEND_URL || 'https://www.jotya.xyz';
       let notifText = '';
       if (payment.type === 'reveal_seller') {
-        notifText = `✅ Votre paiement de 50 DH a été confirmé ! Vous pouvez maintenant voir les coordonnées du vendeur pour le produit "${payment.product?.title || 'ce produit'}". Rendez-vous sur la page du produit pour contacter le vendeur.`;
+        const productLink = `${FRONTEND}/products/${payment.product?._id}`;
+        notifText = `✅ Votre paiement de 50 DH a été confirmé !
+
+Vous pouvez maintenant voir les coordonnées du vendeur pour le produit "${payment.product?.title || 'ce produit'}".
+
+👉 Lien du produit : ${productLink}`;
       } else {
         notifText = `✅ Votre paiement de 50 DH a été confirmé ! Votre produit "${payment.product?.title || 'votre produit'}" est maintenant publié et visible sur Jotya.`;
       }

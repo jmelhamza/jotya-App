@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import '../styles/AdminDashboard.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -15,6 +16,23 @@ const AdminDashboard = () => {
 
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
+  const navigate = useNavigate();
+
+  const goToConversation = async (buyerId) => {
+    try {
+      // get or create a conversation between admin and buyer
+      const res = await axios.post(
+        `${API_BASE_URL}/api/messages/conversations`,
+        { sellerId: buyerId },
+        { headers }
+      );
+      const convId = res.data.data._id;
+      navigate(`/messages?convId=${convId}`);
+    } catch (err) {
+      console.error('Erreur conversation:', err);
+      setMessage("Erreur lors de l'ouverture de la conversation.");
+    }
+  };
 
   useEffect(() => {
     fetchAll();
@@ -315,6 +333,7 @@ const AdminDashboard = () => {
                   <th>Message</th>
                   <th>Statut</th>
                   <th>Actions</th>
+                  <th>DM</th>
                 </tr>
               </thead>
               <tbody>
@@ -335,6 +354,17 @@ const AdminDashboard = () => {
                           </>
                         )}
                       </div>
+                    </td>
+                    <td>
+                      {o.buyer?._id && (
+                        <button
+                          className="btn-confirm"
+                          style={{ whiteSpace: 'nowrap' }}
+                          onClick={() => goToConversation(o.buyer._id)}
+                        >
+                          💬 Contacter
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

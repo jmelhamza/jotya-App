@@ -268,11 +268,20 @@ const Products = () => {
                 )}
 
                 {product.image?.length > 0 && (
-                  <img
-                    src={`${API_BASE_URL}${product.image[0]}`}
-                    alt={product.title}
-                    className="product-image"
-                  />
+                  <div className="card-img-wrapper">
+                    <img
+                      src={`${API_BASE_URL}${product.image[0]}`}
+                      alt={product.title}
+                      className="product-image"
+                    />
+                    {product.image.length > 1 && (
+                      <div className="card-img-dots">
+                        {product.image.map((_, di) => (
+                          <span key={di} className={`card-img-dot${di === 0 ? " active" : ""}`} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 <h3 style={{
