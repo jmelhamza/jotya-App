@@ -102,7 +102,16 @@ const Products = () => {
 
   return (
     <div className="products-container">
-      <h2>Produits disponibles</h2>
+      {/* Storytelling banner — flea market atmosphere */}
+      <div className="vintage-story-banner">
+        ✦ Chaque objet a une histoire — Trouve la tienne &nbsp;·&nbsp;
+        <strong>Vide-greniers en ligne · Maroc</strong> &nbsp;·&nbsp;
+        Pièces uniques, prix justes ✦
+      </div>
+
+      <div className="vintage-page-header">
+        <h2>Le Marché</h2>
+      </div>
 
       {/* Search + Filter bar */}
       <div className="search-filter-bar">
@@ -221,61 +230,102 @@ const Products = () => {
         {filtered.length === 0 ? (
           <p>Aucun produit disponible dans cette catégorie.</p>
         ) : (
-          filtered.map(product => (
-            <div
-              key={product._id}
-              className="product-card"
-              onClick={() => navigate(`/produits/${product._id}`)}
-              style={{ cursor: 'pointer' }}
-            >
-              {product.image?.length > 0 && (
-                <img
-                  src={`${API_BASE_URL}${product.image[0]}`}
-                  alt={product.title}
-                  className="product-image"
-                  onClick={e => { e.stopPropagation(); setSelectedImage(`${API_BASE_URL}${product.image[0]}`); }}
-                />
-              )}
+          filtered.map((product, idx) => {
+            // ── Consumer behavior hooks logic ──
+            // Rotate through hooks based on index & price to feel organic
+            const isSold      = product.status === 'Vendu';
+            const isNew       = idx < 4; // first few = newest
+            const isHighPrice = Number(product.price) >= 300;
+            const hookType    = isSold ? 'vendu'
+              : isNew ? 'nouveau'
+              : isHighPrice ? 'rare'
+              : idx % 4 === 0 ? 'coup'
+              : idx % 4 === 1 ? 'scarcity'
+              : null;
 
-              <h3>{product.title}</h3>
-              <p className="price">{product.price} MAD</p>
-              <p className="category"><strong>Catégorie :</strong> {product.category}</p>
+            return (
+              <div
+                key={product._id}
+                className="product-card"
+                onClick={() => navigate(`/produits/${product._id}`)}
+                style={{ cursor: 'pointer' }}
+              >
+                {/* ── Persuasion hooks ── */}
+                {hookType === 'vendu' && (
+                  <div className="vhook-vendu-stamp"><span>VENDU</span></div>
+                )}
+                {hookType === 'nouveau' && (
+                  <span className="vhook vhook-rare">✦ Nouveau</span>
+                )}
+                {hookType === 'rare' && (
+                  <span className="vhook vhook-rare">Pièce Rare</span>
+                )}
+                {hookType === 'scarcity' && (
+                  <span className="vhook vhook-scarcity">Dernier dispo</span>
+                )}
+                {hookType === 'coup' && (
+                  <span className="vhook vhook-coup">⭐ Coup de Cœur</span>
+                )}
 
-              {product.seller ? (
-                <p>
-                  Vendeur :{' '}
-                  <a href={`/vendeur/${product.seller._id}`} onClick={e => e.stopPropagation()}>
-                    {product.seller.shopName || product.seller.name}
-                  </a>
-                </p>
-              ) : (
-                <p>Vendeur inconnu</p>
-              )}
+                {product.image?.length > 0 && (
+                  <img
+                    src={`${API_BASE_URL}${product.image[0]}`}
+                    alt={product.title}
+                    className="product-image"
+                  />
+                )}
 
-              <p>
-                <strong>État :</strong>{' '}
+                <h3 style={{
+                  margin: 0,
+                  overflow: 'hidden',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 1,
+                  WebkitBoxOrient: 'vertical',
+                }}>{product.title}</h3>
+
+                {product.description && (
+                  <p style={{
+                    fontSize: '12px',
+                    color: '#7a5c40',
+                    margin: 0,
+                    lineHeight: '1.5',
+                    fontFamily: 'Georgia, serif',
+                    textAlign: 'left',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}>
+                    {product.description}
+                  </p>
+                )}
+
+                <p className="price" style={{ margin: 0 }}>{product.price} MAD</p>
+
                 <span className={product.status === 'Disponible' ? 'status-disponible' : 'status-vendu'}>
                   {product.status}
                 </span>
-              </p>
 
-              {/* 🔒 Locked info hint */}
-              {product.status === 'Disponible' && (
-                <div style={{
-                  marginTop: '10px',
-                  padding: '8px 12px',
-                  background: '#fafafa',
-                  border: '1px dashed #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  color: '#888',
-                  textAlign: 'center',
-                }}>
-                  🔒 Voir les coordonnées — 20 DH
-                </div>
-              )}
-            </div>
-          ))
+                {/* 🔒 Locked info hint — urgency micro-copy */}
+                {product.status === 'Disponible' && (
+                  <div style={{
+                    marginTop: '10px',
+                    padding: '8px 12px',
+                    background: 'rgba(201,152,58,0.08)',
+                    border: '1px dashed rgba(201,152,58,0.5)',
+                    borderRadius: '3px',
+                    fontSize: '11.5px',
+                    color: '#8a5c2a',
+                    textAlign: 'center',
+                    fontFamily: "'Special Elite', monospace",
+                    letterSpacing: '0.04em',
+                  }}>
+                    🔒 Coordonnées du vendeur — 50 DH
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
 

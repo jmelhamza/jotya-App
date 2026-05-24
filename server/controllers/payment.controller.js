@@ -1,60 +1,30 @@
-import fetch from 'node-fetch';
-import Payment from '../models/payment.model.js';
-import Product from '../models/product.model.js';
-import User from '../models/user.model.js';
+import Payment      from '../models/payment.model.js';
+import Product      from '../models/product.model.js';
+import User         from '../models/user.model.js';
+import Conversation from '../models/conversation.model.js';
+import Message      from '../models/message.model.js';
+import multer       from 'multer';
+import path         from 'path';
+import fs           from 'fs';
 
-// ─── Prices (MAD) ─────────────────────────────────────────────────────────────
+// ─── Prices (MAD) ─────────────────────────────────────────────
 const PRICES = {
-  reveal_seller:   20,
-  publish_product: 35,
+  reveal_seller:   50,
+  publish_product: 50,
 };
 
-const MAD_TO_USD = 0.10;
-const toUSD = (mad) => (mad * MAD_TO_USD).toFixed(2);
+// ─── Multer — receipt upload ───────────────────────────────────
+const receiptDir = 'uploads/receipts';
+if (!fs.existsSync(receiptDir)) fs.mkdirSync(receiptDir, { recursive: true });
 
-// ─── Check env vars ───────────────────────────────────────────────────────────
-const checkPayPalEnv = () => {
-  const missing = [];
-  if (!process.env.PAYPAL_BASE_URL)      missing.push('PAYPAL_BASE_URL');
-  if (!process.env.PAYPAL_CLIENT_ID)     missing.push('PAYPAL_CLIENT_ID');
-  if (!process.env.PAYPAL_CLIENT_SECRET) missing.push('PAYPAL_CLIENT_SECRET');
-  if (!process.env.CLIENT_URL)           missing.push('CLIENT_URL');
-  return missing;
-};
+const storage = multer.diskStorage({
+  destination: (_, __, cb) => cb(null, receiptDir),
+  filename:    (_, file, cb) => cb(null, `receipt_${Date.now()}${path.extname(file.originalname)}`),
+});
+export const uploadReceipt = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// ─── Get PayPal access token ──────────────────────────────────────────────────
-const getPayPalToken = async () => {
-  const missing = checkPayPalEnv();
-  if (missing.length > 0) {
-    throw new Error(`Variables d'environnement PayPal manquantes: ${missing.join(', ')}`);
-  }
-
-  const res = await fetch(
-    `${process.env.PAYPAL_BASE_URL}/v1/oauth2/token`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: `Basic ${Buffer.from(
-          `${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`
-        ).toString('base64')}`,
-      },
-      body: 'grant_type=client_credentials',
-    }
-  );
-
-  const data = await res.json();
-
-  if (!data.access_token) {
-    console.error('PayPal token error:', JSON.stringify(data));
-    throw new Error(`Impossible d'obtenir un token PayPal: ${data.error_description || data.error || 'Vérifiez vos clés PayPal'}`);
-  }
-
-  return data.access_token;
-};
-
-// ─── CREATE PayPal order ──────────────────────────────────────────────────────
-export const createPaypalOrder = async (req, res) => {
+// ─── SUBMIT manual payment request ────────────────────────────
+export const submitManualPayment = async (req, res) => {
   const { type, productId } = req.body;
   const payerId = req.user.id;
 
@@ -62,155 +32,152 @@ export const createPaypalOrder = async (req, res) => {
     return res.status(400).json({ message: 'Type de paiement invalide.' });
   }
 
-  const amountMAD = PRICES[type];
-  const amountUSD = toUSD(amountMAD);
+  const amount = PRICES[type];
 
   try {
-    if (productId) {
+    if (type === 'reveal_seller' && productId) {
       const product = await Product.findById(productId);
       if (!product) return res.status(404).json({ message: 'Produit introuvable.' });
-
-      if (type === 'reveal_seller' && product.seller.toString() === payerId) {
+      if (product.seller.toString() === payerId) {
         return res.status(400).json({ message: "C'est votre propre produit." });
       }
-
-      if (type === 'reveal_seller') {
-        const existing = await Payment.findOne({
-          payer: payerId, type: 'reveal_seller',
-          product: productId, status: 'completed',
-        });
-        if (existing) {
-          return res.status(400).json({ message: 'Vous avez déjà accès aux coordonnées de ce vendeur.', alreadyPaid: true });
-        }
+      // check already completed
+      const existing = await Payment.findOne({
+        payer: payerId, type: 'reveal_seller',
+        product: productId, status: 'completed',
+      });
+      if (existing) {
+        return res.status(400).json({ message: 'Accès déjà accordé.', alreadyPaid: true });
+      }
+      // check already pending
+      const pending = await Payment.findOne({
+        payer: payerId, type: 'reveal_seller',
+        product: productId, status: 'pending',
+      });
+      if (pending) {
+        return res.status(400).json({ message: 'Demande déjà en attente de validation.', pendingId: pending._id });
       }
     }
 
-    const accessToken = await getPayPalToken();
-
-    const descriptions = {
-      reveal_seller:   `Jotya — Voir les coordonnées du vendeur`,
-      publish_product: `Jotya — Publication de produit`,
-    };
-
-    const ppRes = await fetch(`${process.env.PAYPAL_BASE_URL}/v2/checkout/orders`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        intent: 'CAPTURE',
-        purchase_units: [{
-          amount: { currency_code: 'USD', value: amountUSD },
-          description: descriptions[type],
-          custom_id: JSON.stringify({ type, productId: productId || null, payerId }),
-        }],
-        application_context: {
-          brand_name: 'Jotya',
-          user_action: 'PAY_NOW',
-          return_url: `${process.env.CLIENT_URL}/paiement/success`,
-          cancel_url:  `${process.env.CLIENT_URL}/paiement/cancel`,
-        },
-      }),
-    });
-
-    const ppOrder = await ppRes.json();
-
-    if (!ppOrder.id) {
-      console.error('PayPal create order error:', JSON.stringify(ppOrder));
-      return res.status(500).json({
-        message: `Erreur PayPal: ${ppOrder.message || ppOrder.error || 'Réponse inattendue'}`,
-      });
-    }
+    const receiptImage = req.file ? `/uploads/receipts/${req.file.filename}` : null;
 
     const payment = new Payment({
       payer: payerId,
       type,
       product: productId || null,
-      amount: amountMAD,
-      paypalOrderId: ppOrder.id,
-      paypalStatus: 'CREATED',
+      amount,
+      receiptImage,
+      manualNote: req.body.note || '',
       status: 'pending',
     });
     await payment.save();
 
-    res.status(201).json({
-      success: true,
-      paypalOrderId: ppOrder.id,
-      approvalUrl: ppOrder.links.find(l => l.rel === 'approve')?.href,
-      amountMAD,
-      amountUSD,
-    });
-  } catch (error) {
-    console.error('createPaypalOrder error:', error.message);
-    res.status(500).json({ message: error.message || 'Erreur serveur.' });
+    res.status(201).json({ success: true, paymentId: payment._id, message: 'Demande envoyée. En attente de validation.' });
+  } catch (err) {
+    console.error('submitManualPayment error:', err.message);
+    res.status(500).json({ message: 'Erreur serveur.' });
   }
 };
 
-// ─── CAPTURE PayPal order ─────────────────────────────────────────────────────
-export const capturePaypalOrder = async (req, res) => {
-  const { paypalOrderId } = req.body;
-  const payerId = req.user.id;
-
-  if (!paypalOrderId) return res.status(400).json({ message: 'paypalOrderId obligatoire.' });
+// ─── ADMIN: confirm payment ────────────────────────────────────
+export const confirmPayment = async (req, res) => {
+  const { paymentId } = req.params;
+  const adminId = req.user.id;
 
   try {
-    const existingPayment = await Payment.findOne({ paypalOrderId });
-    if (existingPayment && existingPayment.status === 'completed') {
-      return res.status(200).json({ success: true, payment: existingPayment, alreadyCaptured: true });
-    }
+    const payment = await Payment.findById(paymentId)
+      .populate('payer', 'name')
+      .populate('product', 'title seller');
 
-    const accessToken = await getPayPalToken();
+    if (!payment) return res.status(404).json({ message: 'Paiement introuvable.' });
 
-    const captureRes = await fetch(
-      `${process.env.PAYPAL_BASE_URL}/v2/checkout/orders/${paypalOrderId}/capture`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    payment.status      = 'completed';
+    payment.confirmedBy = adminId;
+    payment.confirmedAt = new Date();
+    await payment.save();
 
-    const captureData = await captureRes.json();
-    console.log('PayPal capture response:', JSON.stringify(captureData));
-
-    if (captureData.status !== 'COMPLETED') {
-      await Payment.findOneAndUpdate(
-        { paypalOrderId },
-        { paypalStatus: captureData.status || 'UNKNOWN', status: 'failed' }
-      );
-      const reason = captureData.details?.[0]?.description || captureData.message || 'Paiement non complété.';
-      return res.status(400).json({ message: reason, details: captureData });
-    }
-
-    // Search by paypalOrderId ONLY — pas par payer pour éviter les mismatches
-    const payment = await Payment.findOneAndUpdate(
-      { paypalOrderId },
-      { paypalStatus: 'COMPLETED', status: 'completed', payer: payerId },
-      { new: true }
-    );
-
-    if (!payment) {
-      return res.status(404).json({ message: 'Paiement introuvable en base. Contactez le support.' });
-    }
-
+    // publish product if seller paid
     if (payment.type === 'publish_product' && payment.product) {
-      await Product.findByIdAndUpdate(payment.product, {
+      await Product.findByIdAndUpdate(payment.product._id, {
         approvalStatus: 'approved',
-        publishOption: 'paid_flat',
+        publishOption:  'paid_flat',
       });
     }
 
+    // ── Send notification via internal message system ──────────
+    try {
+      const admin = await User.findById(adminId);
+      const payerId = payment.payer._id;
+
+      // find or create conversation between admin and payer
+      let conv = await Conversation.findOne({
+        participants: { $all: [adminId, payerId] },
+      });
+
+      if (!conv) {
+        conv = new Conversation({
+          participants: [adminId, payerId],
+          product: payment.product?._id || null,
+          unreadCount: { [adminId]: 0, [payerId.toString()]: 0 },
+        });
+      }
+
+      // notification message text
+      let notifText = '';
+      if (payment.type === 'reveal_seller') {
+        notifText = `✅ Votre paiement de 50 DH a été confirmé ! Vous pouvez maintenant voir les coordonnées du vendeur pour le produit "${payment.product?.title || 'ce produit'}". Rendez-vous sur la page du produit pour contacter le vendeur.`;
+      } else {
+        notifText = `✅ Votre paiement de 50 DH a été confirmé ! Votre produit "${payment.product?.title || 'votre produit'}" est maintenant publié et visible sur Jotya.`;
+      }
+
+      conv.lastMessage   = notifText.slice(0, 80);
+      conv.lastMessageAt = new Date();
+      // increment unread for payer
+      const currentUnread = conv.unreadCount?.get?.(payerId.toString()) || 0;
+      conv.unreadCount = {
+        ...(conv.unreadCount ? Object.fromEntries(conv.unreadCount) : {}),
+        [payerId.toString()]: currentUnread + 1,
+      };
+      await conv.save();
+
+      await Message.create({
+        conversation: conv._id,
+        sender: adminId,
+        text: notifText,
+        read: false,
+      });
+    } catch (notifErr) {
+      // don't fail the whole confirmation if notif fails
+      console.error('Notification error (non-blocking):', notifErr.message);
+    }
+
     res.status(200).json({ success: true, payment });
-  } catch (error) {
-    console.error('capturePaypalOrder error:', error.message);
-    res.status(500).json({ message: error.message || 'Erreur serveur.' });
+  } catch (err) {
+    console.error('confirmPayment error:', err.message);
+    res.status(500).json({ message: 'Erreur serveur.' });
   }
 };
 
-// ─── CHECK access ─────────────────────────────────────────────────────────────
+// ─── ADMIN: reject payment ─────────────────────────────────────
+export const rejectPayment = async (req, res) => {
+  const { paymentId } = req.params;
+  const { reason } = req.body;
+
+  try {
+    const payment = await Payment.findById(paymentId);
+    if (!payment) return res.status(404).json({ message: 'Paiement introuvable.' });
+
+    payment.status          = 'rejected';
+    payment.rejectionReason = reason || '';
+    await payment.save();
+
+    res.status(200).json({ success: true, payment });
+  } catch (err) {
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+};
+
+// ─── CHECK access (buyer already paid for this product) ────────
 export const checkRevealAccess = async (req, res) => {
   const { productId } = req.params;
   const payerId = req.user.id;
@@ -220,12 +187,12 @@ export const checkRevealAccess = async (req, res) => {
       product: productId, status: 'completed',
     });
     res.status(200).json({ success: true, hasAccess: !!payment });
-  } catch (error) {
+  } catch (err) {
     res.status(500).json({ message: 'Erreur serveur.' });
   }
 };
 
-// ─── GET seller info ──────────────────────────────────────────────────────────
+// ─── GET seller info (only if paid) ───────────────────────────
 export const getSellerInfo = async (req, res) => {
   const { productId } = req.params;
   const payerId = req.user.id;
@@ -244,41 +211,49 @@ export const getSellerInfo = async (req, res) => {
     });
 
     if (!payment) {
-      return res.status(403).json({
-        message: 'Payez 20 DH pour voir les coordonnées du vendeur.',
-        requiresPayment: true,
+      // check if pending
+      const pending = await Payment.findOne({
+        payer: payerId, type: 'reveal_seller',
+        product: productId, status: 'pending',
       });
+      if (pending) {
+        return res.status(403).json({ message: 'Votre paiement est en cours de validation.', pendingPayment: true });
+      }
+      return res.status(403).json({ message: 'Payez 20 DH pour voir les coordonnées du vendeur.', requiresPayment: true });
     }
 
     const seller = await User.findById(product.seller).select('name phone whatsapp facebook shopName email');
     res.status(200).json({ success: true, seller });
-  } catch (error) {
-    console.error('getSellerInfo error:', error.message);
+  } catch (err) {
     res.status(500).json({ message: 'Erreur serveur.' });
   }
 };
 
-// ─── GET payment status ───────────────────────────────────────────────────────
-export const getPaymentStatus = async (req, res) => {
-  const { paypalOrderId } = req.params;
-  try {
-    const payment = await Payment.findOne({ paypalOrderId });
-    if (!payment) return res.status(404).json({ message: 'Paiement introuvable.' });
-    res.status(200).json({ success: true, paypalStatus: payment.paypalStatus, status: payment.status });
-  } catch (error) {
-    res.status(500).json({ message: 'Erreur serveur.' });
-  }
-};
-
-// ─── ADMIN: all payments ──────────────────────────────────────────────────────
+// ─── ADMIN: all payments ───────────────────────────────────────
 export const getAllPayments = async (req, res) => {
   try {
     const payments = await Payment.find()
       .sort({ createdAt: -1 })
-      .populate('payer', 'name email')
+      .populate('payer',   'name email phone')
       .populate('product', 'title price');
     res.status(200).json({ success: true, data: payments });
-  } catch (error) {
+  } catch (err) {
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+};
+
+// ─── USER: my payment status for a product ────────────────────
+export const getMyPaymentStatus = async (req, res) => {
+  const { productId } = req.params;
+  const payerId = req.user.id;
+  try {
+    const payment = await Payment.findOne({
+      payer: payerId,
+      product: productId,
+      type: 'reveal_seller',
+    }).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, payment });
+  } catch (err) {
     res.status(500).json({ message: 'Erreur serveur.' });
   }
 };

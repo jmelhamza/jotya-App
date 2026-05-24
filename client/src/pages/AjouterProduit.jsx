@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
@@ -30,9 +30,12 @@ const categories = [
   { value: 'Autres', label: 'Autres' },
 ];
 
+const MAX_IMAGES = 5;
+
 const AjouterProduit = () => {
   const { isLoggedIn, user } = useAuth();
   const navigate = useNavigate();
+  const inputRef = useRef(null);
 
   const [form, setForm] = useState({ title: '', price: '', description: '', status: 'Disponible', category: '' });
   const [images, setImages] = useState([]);
@@ -64,6 +67,21 @@ const AjouterProduit = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Add new files without losing existing ones
+  const handleFilePick = (e) => {
+    const picked = Array.from(e.target.files);
+    setImages(prev => {
+      const combined = [...prev, ...picked];
+      return combined.slice(0, MAX_IMAGES);
+    });
+    // reset input so same file can be re-added after removal
+    e.target.value = '';
+  };
+
+  const removeImage = (idx) => {
+    setImages(prev => prev.filter((_, i) => i !== idx));
   };
 
   const handleSubmit = async (e) => {
@@ -112,8 +130,20 @@ const AjouterProduit = () => {
     navigate('/mes-ventes');
   };
 
+  const canAddMore = images.length < MAX_IMAGES;
+
   return (
     <>
+      {/* hidden file input — single source of truth */}
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleFilePick}
+      />
+
       <form onSubmit={handleSubmit} className="ajouter-produit-form">
         <h2>Ajouter un produit</h2>
 
@@ -130,8 +160,92 @@ const AjouterProduit = () => {
             <option key={cat.value} value={cat.value}>{cat.label}</option>
           ))}
         </select>
-        <input type="file" multiple accept="image/*" onChange={e => setImages([...e.target.files])} />
-        <p style={{ fontSize: '12px', color: '#aaa', marginTop: '-8px' }}>Vous pouvez sélectionner plusieurs photos.</p>
+
+        {/* ── Photo upload ── */}
+        <div>
+          <p style={{ margin: '0 0 10px', fontWeight: '600', fontSize: '13px', color: '#6b4c2a', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            Photos ({images.length}/{MAX_IMAGES})
+          </p>
+
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            {/* Existing previews */}
+            {images.map((img, i) => (
+              <div key={i} style={{ position: 'relative', flexShrink: 0 }}>
+                <img
+                  src={URL.createObjectURL(img)}
+                  alt={`photo ${i + 1}`}
+                  style={{
+                    width: '80px', height: '80px',
+                    objectFit: 'cover',
+                    borderRadius: '4px',
+                    border: i === 0 ? '2px solid #c9983a' : '2px solid rgba(107,76,42,0.2)',
+                    filter: 'sepia(8%)',
+                    display: 'block',
+                  }}
+                />
+                {/* Remove button */}
+                <button
+                  type="button"
+                  onClick={() => removeImage(i)}
+                  style={{
+                    position: 'absolute', top: '-7px', right: '-7px',
+                    width: '20px', height: '20px',
+                    background: '#c0542a', color: '#fff',
+                    border: 'none', borderRadius: '50%',
+                    fontSize: '11px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    lineHeight: 1, padding: 0,
+                  }}
+                >✕</button>
+                {i === 0 && (
+                  <span style={{
+                    position: 'absolute', bottom: 0, left: 0, right: 0,
+                    background: 'rgba(201,152,58,0.85)',
+                    color: '#fff', fontSize: '8px',
+                    textAlign: 'center', padding: '2px 0',
+                    letterSpacing: '0.08em', fontWeight: '700',
+                  }}>PRINCIPALE</span>
+                )}
+              </div>
+            ))}
+
+            {/* Add more button — only shows if under MAX */}
+            {canAddMore && (
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                style={{
+                  width: '80px', height: '80px',
+                  border: '2px dashed rgba(107,76,42,0.35)',
+                  borderRadius: '4px',
+                  background: 'rgba(201,152,58,0.06)',
+                  cursor: 'pointer',
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  gap: '4px', color: '#8a6a4a',
+                  fontSize: '1.6rem', lineHeight: 1,
+                  flexShrink: 0,
+                }}
+              >
+                <span>+</span>
+                <span style={{ fontSize: '9px', letterSpacing: '0.04em', fontWeight: '600' }}>PHOTO</span>
+              </button>
+            )}
+
+            {/* Empty state — no photos yet */}
+            {images.length === 0 && !canAddMore === false && (
+              <p style={{ fontSize: '12px', color: '#aaa', margin: '8px 0 0', width: '100%' }}>
+                Ajoutez jusqu'à {MAX_IMAGES} photos. La 1ère sera la photo principale.
+              </p>
+            )}
+          </div>
+
+          {images.length === 0 && (
+            <p style={{ fontSize: '12px', color: '#a08060', margin: '8px 0 0' }}>
+              Ajoutez jusqu'à {MAX_IMAGES} photos · La 1ère sera la principale
+            </p>
+          )}
+        </div>
 
         {!isAdmin && (
           <div style={styles.optionSection}>
@@ -139,10 +253,10 @@ const AjouterProduit = () => {
 
             <div onClick={() => setPublishOption('paid_flat')} style={{ ...styles.optionCard, ...(publishOption === 'paid_flat' ? styles.optionCardActive : {}) }}>
               <div style={styles.optionHeader}>
-                <span style={styles.optionName}>💳 Publication directe — 35 DH</span>
+                <span style={styles.optionName}>💳 Publication directe — 50 DH</span>
                 <span style={styles.optionRadio}>{publishOption === 'paid_flat' ? '🔵' : '⚪'}</span>
               </div>
-              <p style={styles.optionDesc}>Payez 35 DH une seule fois. Votre annonce est publiée immédiatement. Les acheteurs payent 20 DH pour voir vos coordonnées.</p>
+              <p style={styles.optionDesc}>Payez 50 DH une seule fois. Votre annonce est publiée immédiatement. Les acheteurs payent 50 DH pour voir vos coordonnées.</p>
             </div>
 
             <div onClick={() => setPublishOption('commission')} style={{ ...styles.optionCard, ...(publishOption === 'commission' ? styles.optionCardActive : {}) }}>
@@ -166,7 +280,7 @@ const AjouterProduit = () => {
         <PaymentModal
           type="publish_product"
           productId={createdProductId}
-          amount={35}
+          amount={50}
           label="Publication de votre produit sur Jotya"
           onSuccess={handlePaymentSuccess}
           onClose={() => setShowPayModal(false)}

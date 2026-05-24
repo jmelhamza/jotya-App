@@ -1,48 +1,262 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ── Reset scoped to admin ── */
+.admin-dashboard * { box-sizing: border-box; }
+
 .admin-dashboard {
-  padding: 20px;
-  max-width: 1000px;
-  margin: auto;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+  color: #1a1a2e;
 }
 
-h2, h3 {
-  text-align: center;
-  color: #333;
+/* ── Header ── */
+.admin-dashboard h2 {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 0 0 6px;
+  text-align: left;
+  letter-spacing: -0.03em;
 }
 
-.dashboard-section {
-  margin-top: 40px;
+.admin-subtitle {
+  font-size: 13px;
+  color: #888;
+  margin: 0 0 28px;
+}
+
+/* ── Message flash ── */
+.admin-message {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #166534;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: left !important;
+}
+
+/* ── Stats row ── */
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.stat-card .stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #999;
+  margin: 0 0 6px;
+}
+
+.stat-card .stat-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  line-height: 1;
+}
+
+.stat-card .stat-sub {
+  font-size: 11px;
+  color: #c0542a;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* ── Tabs ── */
+.admin-tabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 2px solid #f0f0f0;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  padding: 9px 16px;
+  border: none;
+  background: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  border-radius: 0;
+  transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  color: #1a1a2e;
+  background: none;
+}
+
+.tab-btn.active {
+  color: #c0542a;
+  border-bottom-color: #c0542a;
+  background: none;
+}
+
+/* ── Section ── */
+.dashboard-section h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 16px;
+  text-align: left;
+}
+
+/* ── Table ── */
+.admin-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 15px;
+  font-size: 13px;
+  background: #fff;
 }
 
-th, td {
-  border: 1px solid #ddd;
-  padding: 12px;
-  text-align: center;
+thead {
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 th {
-  background-color: #f0f0f0;
-}
-
-button {
-  background-color: #c0392b;
-  color: white;
-  padding: 5px 10px;
+  padding: 11px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #999;
   border: none;
-  cursor: pointer;
-  border-radius: 5px;
+  background: #fafafa;
+  white-space: nowrap;
 }
 
-button:hover {
-  background-color: #e74c3c;
+td {
+  padding: 12px 14px;
+  border: none;
+  border-bottom: 1px solid #f7f7f7;
+  color: #333;
+  vertical-align: middle;
 }
 
-p {
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafafa; }
+
+/* ── Badges ── */
+.badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.badge-pending  { background: #fef3c7; color: #92400e; }
+.badge-done     { background: #d1fae5; color: #065f46; }
+.badge-rejected { background: #fee2e2; color: #991b1b; }
+.badge-blue     { background: #dbeafe; color: #1e40af; }
+
+/* ── Action buttons inside table ── */
+.btn-confirm {
+  background: #059669; color: #fff;
+  border: none; padding: 6px 12px;
+  border-radius: 6px; cursor: pointer;
+  font-size: 12px; font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.2s;
+}
+.btn-confirm:hover { background: #047857; }
+
+.btn-reject {
+  background: #dc2626; color: #fff;
+  border: none; padding: 6px 12px;
+  border-radius: 6px; cursor: pointer;
+  font-size: 12px; font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.2s;
+}
+.btn-reject:hover { background: #b91c1c; }
+
+.btn-delete {
+  background: #f3f4f6; color: #6b7280;
+  border: 1px solid #e5e7eb; padding: 6px 12px;
+  border-radius: 6px; cursor: pointer;
+  font-size: 12px; font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s;
+}
+.btn-delete:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+
+.btn-approve {
+  background: #2563eb; color: #fff;
+  border: none; padding: 6px 12px;
+  border-radius: 6px; cursor: pointer;
+  font-size: 12px; font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.2s;
+}
+.btn-approve:hover { background: #1d4ed8; }
+
+.btn-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── Receipt link ── */
+.receipt-link {
+  color: #c0542a;
+  font-weight: 700;
+  font-size: 12px;
+  text-decoration: none;
+  padding: 4px 8px;
+  background: rgba(192,84,42,0.08);
+  border-radius: 4px;
+}
+.receipt-link:hover { background: rgba(192,84,42,0.15); }
+
+/* ── Empty state ── */
+.admin-empty {
   text-align: center;
-  color: green;
+  padding: 40px 20px;
+  color: #bbb;
+  font-size: 14px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .admin-stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .admin-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .admin-dashboard { padding: 16px 12px 40px; }
+  .admin-dashboard h2 { font-size: 1.3rem; }
+  .tab-btn { padding: 8px 10px; font-size: 12px; }
 }

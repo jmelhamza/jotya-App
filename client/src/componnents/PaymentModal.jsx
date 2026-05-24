@@ -3,134 +3,153 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
+// ── Contact info ─────────────────────────────────────────────
+const WHATSAPP    = '0639691765';
+const CASHPLUS    = 'Jmel Hamza';
+const WA_LINK     = `https://wa.me/212${WHATSAPP.slice(1)}`;
+
 const PaymentModal = ({ type, productId, amount, label, onSuccess, onClose }) => {
-  const [step, setStep] = useState('confirm');
+  const [step, setStep]         = useState('instructions'); // instructions | upload | pending | success | error
+  const [receipt, setReceipt]   = useState(null);
+  const [preview, setPreview]   = useState(null);
+  const [note, setNote]         = useState('');
+  const [loading, setLoading]   = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const timerRef = useRef(null);
+  const inputRef = useRef(null);
 
-  const handlePay = async () => {
-    setStep('processing');
+  const handleFilePick = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setReceipt(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
+  const handleSubmit = async () => {
+    if (!receipt) { setErrorMsg('Veuillez joindre une photo du reçu.'); return; }
+    setLoading(true);
     setErrorMsg('');
-
     try {
       const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('type',       type);
+      formData.append('productId',  productId || '');
+      formData.append('note',       note);
+      formData.append('receipt',    receipt);
 
-      const createRes = await axios.post(
-        `${API_BASE_URL}/api/payments/create`,
-        { type, productId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      const { paypalOrderId, approvalUrl } = createRes.data;
-      if (!approvalUrl) throw new Error('URL PayPal introuvable.');
-
-      const popup = window.open(approvalUrl, 'paypal_popup', 'width=600,height=700,left=300,top=100');
-
-      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-        window.location.href = approvalUrl;
-        return;
-      }
-
-      timerRef.current = setInterval(async () => {
-        if (!popup || popup.closed) {
-          clearInterval(timerRef.current);
-
-          try {
-            const statusRes = await axios.get(
-              `${API_BASE_URL}/api/payments/status/${paypalOrderId}`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            ).catch(() => null);
-
-            if (statusRes?.data?.paypalStatus === 'CREATED') {
-              setErrorMsg('Paiement annulé. Vous pouvez réessayer.');
-              setStep('error');
-              return;
-            }
-          } catch (_) {}
-
-          try {
-            await axios.post(
-              `${API_BASE_URL}/api/payments/capture`,
-              { paypalOrderId },
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-            setStep('success');
-            setTimeout(() => onSuccess(), 1500);
-          } catch (captureErr) {
-            const msg = captureErr.response?.data?.message || 'Paiement non confirmé. Réessayez.';
-            setErrorMsg(msg);
-            setStep('error');
-          }
-        }
-      }, 1000);
-
+      await axios.post(`${API_BASE_URL}/api/payments/submit`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      setStep('pending');
     } catch (err) {
-      if (err.response?.data?.alreadyPaid) {
-        onSuccess();
-        return;
-      }
-      const msg = err.response?.data?.message || err.message || 'Erreur lors de la création du paiement.';
-      setErrorMsg(msg);
-      setStep('error');
+      if (err.response?.data?.alreadyPaid) { onSuccess(); return; }
+      setErrorMsg(err.response?.data?.message || 'Erreur lors de l\'envoi. Réessayez.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleClose = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    onClose();
-  };
-
   return (
-    <div style={styles.overlay} onClick={e => { if (e.target === e.currentTarget) handleClose(); }}>
-      <div style={styles.modal}>
+    <div style={S.overlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={S.modal}>
 
-        {step === 'confirm' && (
+        {/* ── Step 1: Instructions ── */}
+        {step === 'instructions' && (
           <>
-            <h2 style={styles.title}>🔓 Débloquer les coordonnées</h2>
-            <p style={styles.subtitle}>{label}</p>
-            <div style={styles.priceBox}>
-              <span style={styles.priceLabel}>Montant :</span>
-              <span style={styles.price}>{amount} DH</span>
+            <h2 style={S.title}>💳 Paiement manuel</h2>
+            <p style={S.subtitle}>{label}</p>
+
+            <div style={S.priceBox}>
+              <span style={S.priceLabel}>Montant à envoyer</span>
+              <span style={S.price}>{amount} DH</span>
             </div>
-            <div style={styles.infoBox}>
-              <p style={{ margin: 0, fontSize: '13px', color: '#555', lineHeight: '1.6' }}>
-                ✅ Paiement sécurisé via PayPal<br />
-                ✅ Accès immédiat après paiement<br />
-                ✅ Numéro de téléphone + WhatsApp + email
-              </p>
+
+            {/* CashPlus instructions */}
+            <div style={S.stepBox}>
+              <p style={S.stepTitle}>📍 Comment payer via CashPlus</p>
+              <ol style={S.ol}>
+                <li>Va dans n'importe quelle agence <strong>CashPlus</strong> près de chez toi</li>
+                <li>Dis à l'agent : <em>"Je veux envoyer {amount} DH"</em></li>
+                <li>Donne le nom du bénéficiaire : <strong style={{ color: '#c0542a' }}>{CASHPLUS}</strong></li>
+                <li>Garde bien le <strong>reçu papier</strong> qu'ils te donnent</li>
+                <li>Prends une photo claire du reçu</li>
+              </ol>
             </div>
-            <button onClick={handlePay} style={styles.btnPaypal}>
-              <img src="https://www.paypalobjects.com/webstatic/mktg/Logo/pp-logo-100px.png" alt="PayPal" style={{ height: '20px', marginRight: '8px', verticalAlign: 'middle' }} />
-              Payer {amount} DH avec PayPal
+
+            {/* WhatsApp shortcut */}
+            <a href={WA_LINK} target="_blank" rel="noopener noreferrer" style={S.waBtn}>
+              💬 Contacter sur WhatsApp — {WHATSAPP}
+            </a>
+
+            <button onClick={() => setStep('upload')} style={S.btnMain}>
+              J'ai payé → Envoyer mon reçu
             </button>
-            <button onClick={handleClose} style={styles.btnCancel}>Annuler</button>
+            <button onClick={onClose} style={S.btnCancel}>Annuler</button>
           </>
         )}
 
-        {step === 'processing' && (
-          <div style={styles.center}>
-            <div style={styles.spinner} />
-            <p style={{ marginTop: '20px', color: '#555' }}>En attente de votre paiement PayPal...</p>
-            <p style={{ fontSize: '13px', color: '#aaa' }}>Complétez le paiement dans la fenêtre PayPal ouverte.</p>
-            <button onClick={handleClose} style={{ ...styles.btnCancel, marginTop: '16px' }}>Annuler</button>
-          </div>
+        {/* ── Step 2: Upload receipt ── */}
+        {step === 'upload' && (
+          <>
+            <h2 style={S.title}>📎 Envoyer le reçu</h2>
+            <p style={S.subtitle}>Joignez une photo claire de votre reçu CashPlus</p>
+
+            {/* Receipt preview / picker */}
+            <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFilePick} />
+
+            {preview ? (
+              <div style={{ position: 'relative', marginBottom: '16px' }}>
+                <img src={preview} alt="reçu" style={S.previewImg} />
+                <button
+                  onClick={() => { setReceipt(null); setPreview(null); }}
+                  style={S.removeBtn}
+                >✕ Changer</button>
+              </div>
+            ) : (
+              <button onClick={() => inputRef.current?.click()} style={S.uploadZone}>
+                <span style={{ fontSize: '2rem' }}>📷</span>
+                <span style={{ fontSize: '13px', color: '#8a6a4a' }}>Appuyez pour choisir une photo</span>
+              </button>
+            )}
+
+            {/* Optional note */}
+            <textarea
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="Note optionnelle (ex: numéro de transaction)"
+              style={S.textarea}
+              rows={2}
+            />
+
+            {errorMsg && <p style={S.error}>{errorMsg}</p>}
+
+            <button onClick={handleSubmit} disabled={loading || !receipt} style={{
+              ...S.btnMain,
+              opacity: (!receipt || loading) ? 0.6 : 1,
+              cursor:  (!receipt || loading) ? 'not-allowed' : 'pointer',
+            }}>
+              {loading ? 'Envoi en cours...' : 'Envoyer la demande →'}
+            </button>
+            <button onClick={() => setStep('instructions')} style={S.btnCancel}>← Retour</button>
+          </>
         )}
 
-        {step === 'success' && (
-          <div style={styles.center}>
-            <div style={{ fontSize: '52px' }}>✅</div>
-            <h3 style={{ margin: '16px 0 8px', color: '#166534' }}>Paiement réussi !</h3>
-            <p style={{ color: '#555', fontSize: '14px' }}>Les coordonnées du vendeur s'affichent maintenant.</p>
-          </div>
-        )}
-
-        {step === 'error' && (
-          <div style={styles.center}>
-            <div style={{ fontSize: '48px' }}>❌</div>
-            <h3 style={{ margin: '16px 0 8px', color: '#991b1b' }}>Paiement échoué</h3>
-            <p style={{ color: '#555', fontSize: '14px', marginBottom: '20px' }}>{errorMsg}</p>
-            <button onClick={() => setStep('confirm')} style={styles.btnPaypal}>Réessayer</button>
-            <button onClick={handleClose} style={styles.btnCancel}>Fermer</button>
+        {/* ── Step 3: Pending validation ── */}
+        {step === 'pending' && (
+          <div style={S.center}>
+            <div style={{ fontSize: '52px' }}>⏳</div>
+            <h3 style={{ margin: '16px 0 8px', color: '#92400e' }}>Demande envoyée !</h3>
+            <p style={{ color: '#6b4c2a', fontSize: '14px', lineHeight: '1.7', margin: '0 0 20px' }}>
+              Votre reçu a été reçu.<br />
+              <strong>L'admin va vérifier et confirmer</strong> votre paiement dans les <strong>24h</strong>.<br />
+              Vous recevrez l'accès dès confirmation.
+            </p>
+            <a href={WA_LINK} target="_blank" rel="noopener noreferrer" style={{ ...S.waBtn, display: 'block', marginBottom: '12px' }}>
+              💬 Suivre sur WhatsApp — {WHATSAPP}
+            </a>
+            <button onClick={onClose} style={S.btnMain}>Fermer</button>
           </div>
         )}
 
@@ -139,23 +158,26 @@ const PaymentModal = ({ type, productId, amount, label, onSuccess, onClose }) =>
   );
 };
 
-const styles = {
-  overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(2px)' },
-  modal: { background: '#fff', borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '420px', margin: '0 16px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' },
-  title: { fontSize: '20px', fontWeight: '800', margin: '0 0 6px', color: '#1a1a1a' },
-  subtitle: { fontSize: '14px', color: '#777', margin: '0 0 20px' },
-  priceBox: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fafafa', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px 18px', marginBottom: '16px' },
-  priceLabel: { color: '#555', fontWeight: '500' },
-  price: { fontSize: '24px', fontWeight: '800', color: '#e63946' },
-  infoBox: { background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px' },
-  btnPaypal: { width: '100%', padding: '14px', background: '#0070ba', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  btnCancel: { width: '100%', padding: '12px', background: 'none', border: '1px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', color: '#888', cursor: 'pointer' },
-  center: { textAlign: 'center', padding: '10px 0' },
-  spinner: { width: '44px', height: '44px', border: '4px solid #e5e7eb', borderTop: '4px solid #0070ba', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' },
+const S = {
+  overlay:    { position: 'fixed', inset: 0, background: 'rgba(10,6,2,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(3px)', padding: '16px' },
+  modal:      { background: '#faf6ed', borderRadius: '8px', padding: '28px 24px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', border: '1.5px solid rgba(107,76,42,0.2)', maxHeight: '90vh', overflowY: 'auto' },
+  title:      { fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: '1.4rem', margin: '0 0 4px', color: '#2c1a0e' },
+  subtitle:   { fontSize: '13px', color: '#8a6a4a', margin: '0 0 18px', fontFamily: 'Georgia, serif' },
+  priceBox:   { display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(201,152,58,0.1)', border: '1px solid rgba(201,152,58,0.4)', borderRadius: '6px', padding: '12px 16px', marginBottom: '16px' },
+  priceLabel: { color: '#6b4c2a', fontWeight: '600', fontSize: '13px' },
+  price:      { fontSize: '1.6rem', fontWeight: '800', color: '#c0542a', fontFamily: "'Special Elite', monospace" },
+  stepBox:    { background: '#fff', border: '1px solid rgba(107,76,42,0.15)', borderRadius: '6px', padding: '14px 16px', marginBottom: '16px' },
+  stepTitle:  { fontWeight: '700', fontSize: '13px', margin: '0 0 10px', color: '#2c1a0e' },
+  ol:         { margin: 0, paddingLeft: '18px', fontSize: '13px', color: '#5a4030', lineHeight: '2' },
+  waBtn:      { display: 'block', textAlign: 'center', background: '#25d366', color: '#fff', padding: '11px', borderRadius: '6px', textDecoration: 'none', fontWeight: '700', fontSize: '13px', marginBottom: '12px', letterSpacing: '0.03em' },
+  btnMain:    { width: '100%', padding: '13px', background: '#c0542a', color: '#fff', border: '2px solid #6b4c2a', borderRadius: '4px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', marginBottom: '10px', fontFamily: "'Special Elite', monospace", letterSpacing: '0.06em' },
+  btnCancel:  { width: '100%', padding: '11px', background: 'none', border: '1px solid rgba(107,76,42,0.25)', borderRadius: '4px', fontSize: '13px', color: '#8a6a4a', cursor: 'pointer' },
+  uploadZone: { width: '100%', border: '2px dashed rgba(107,76,42,0.3)', borderRadius: '6px', background: 'rgba(201,152,58,0.05)', padding: '28px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: '14px' },
+  previewImg: { width: '100%', maxHeight: '220px', objectFit: 'contain', borderRadius: '6px', border: '1.5px solid rgba(201,152,58,0.4)', display: 'block' },
+  removeBtn:  { position: 'absolute', top: '8px', right: '8px', background: '#c0542a', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', fontWeight: '700' },
+  textarea:   { width: '100%', border: '1.5px solid rgba(107,76,42,0.25)', borderRadius: '4px', padding: '10px', fontSize: '13px', fontFamily: 'Georgia, serif', color: '#2c1a0e', background: '#fff', resize: 'none', marginBottom: '14px', boxSizing: 'border-box' },
+  error:      { color: '#c0542a', fontSize: '13px', margin: '-8px 0 12px', fontWeight: '600' },
+  center:     { textAlign: 'center' },
 };
-
-const styleEl = document.createElement('style');
-styleEl.textContent = `@keyframes spin { to { transform: rotate(360deg); } }`;
-document.head.appendChild(styleEl);
 
 export default PaymentModal;

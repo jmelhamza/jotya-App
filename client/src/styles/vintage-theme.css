@@ -1,0 +1,341 @@
+/* ══════════════════════════════════════════════════════════════
+   JOTYA — VINTAGE THEME (clean, safe, no z-index conflicts)
+   Applied to .vintage-layout wrapper (all pages except /)
+══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400;1,700&family=Special+Elite&family=Josefin+Sans:wght@400;600;700&display=swap');
+
+:root {
+  --vc: #f5f0e8;        /* cream */
+  --vw: #ede5d0;        /* warm */
+  --vp: #faf6ed;        /* paper */
+  --vb: #6b4c2a;        /* brown */
+  --vr: #c0542a;        /* rust / CTA */
+  --vg: #c9983a;        /* gold */
+  --vi: #2c1a0e;        /* ink / text */
+  --vs: #8a6a4a;        /* secondary text */
+  --font-title: 'Playfair Display', Georgia, serif;
+  --font-stamp: 'Special Elite', 'Courier New', monospace;
+  --font-ui:    'Josefin Sans', sans-serif;
+}
+
+/* ── Background: warm paper, no fixed/absolute overlays ──────── */
+.vintage-layout {
+  min-height: 100vh;
+  background-color: var(--vc);
+  background-image:
+    radial-gradient(circle, rgba(107,76,42,0.05) 1px, transparent 1px),
+    linear-gradient(160deg, #f5f0e8 0%, #ede5d0 50%, #f0e8d8 100%);
+  background-size: 20px 20px, 100% 100%;
+}
+
+/* ── Typography ─────────────────────────────────────────────── */
+.vintage-layout h1,
+.vintage-layout h2,
+.vintage-layout h3 {
+  font-family: var(--font-title) !important;
+  color: var(--vi) !important;
+}
+
+/* ── Storytelling banner ─────────────────────────────────────── */
+.vintage-story-banner {
+  background: var(--vi);
+  color: var(--vc);
+  text-align: center;
+  padding: 9px 20px;
+  font-family: var(--font-stamp);
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  border-bottom: 2px solid var(--vg);
+  margin: -20px -20px 28px -20px;
+}
+.vintage-story-banner strong { color: var(--vg); }
+
+/* ── Page header ornament ────────────────────────────────────── */
+.vintage-page-header {
+  text-align: center;
+  padding: 16px 0 8px;
+}
+.vintage-page-header h2 {
+  font-family: var(--font-title) !important;
+  font-style: italic;
+  font-size: 2rem !important;
+  color: var(--vi) !important;
+  margin: 0 0 4px !important;
+}
+.vintage-page-header::after {
+  content: '— ❧ —';
+  display: block;
+  color: var(--vg);
+  font-size: 1rem;
+  letter-spacing: 0.3em;
+  margin-top: 4px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PRODUCT CARDS
+══════════════════════════════════════════════════════════════ */
+.vintage-layout .product-card {
+  background: var(--vp) !important;
+  border: 1.5px solid rgba(107,76,42,0.18) !important;
+  border-radius: 4px !important;
+  box-shadow: 3px 3px 0 rgba(107,76,42,0.1), 0 4px 18px rgba(107,76,42,0.07) !important;
+  position: relative;
+  transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+}
+.vintage-layout .product-card:hover {
+  transform: translateY(-5px) rotate(-0.3deg) !important;
+  box-shadow: 5px 8px 0 rgba(107,76,42,0.15), 0 12px 32px rgba(107,76,42,0.1) !important;
+}
+.vintage-layout .product-image {
+  filter: sepia(12%) contrast(1.04) saturate(0.93) !important;
+  border-radius: 2px !important;
+  border: 2px solid rgba(201,152,58,0.3) !important;
+}
+.vintage-layout .product-card h3 {
+  font-family: var(--font-title) !important;
+  font-style: italic;
+  color: var(--vi) !important;
+}
+.vintage-layout .price {
+  font-family: var(--font-stamp) !important;
+  color: var(--vr) !important;
+  font-size: 1.15rem !important;
+  background: rgba(201,152,58,0.1);
+  padding: 2px 8px;
+  border: 1px solid rgba(201,152,58,0.35);
+  border-radius: 2px;
+  display: inline-block !important;
+}
+.vintage-layout .category {
+  font-family: var(--font-ui) !important;
+  font-size: 0.78rem !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--vs) !important;
+}
+.vintage-layout .add-to-cart-btn {
+  background: var(--vr) !important;
+  border: 2px solid var(--vb) !important;
+  border-radius: 3px !important;
+  font-family: var(--font-stamp) !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 12px !important;
+  color: #fff !important;
+}
+.vintage-layout .add-to-cart-btn:hover { background: var(--vb) !important; }
+
+/* Status badges */
+.vintage-layout .status-disponible {
+  background: rgba(122,122,58,0.1) !important;
+  color: #5a6a20 !important;
+  border: 1px solid rgba(122,122,58,0.4) !important;
+  border-radius: 2px !important;
+  font-family: var(--font-ui) !important;
+  font-size: 0.78rem !important;
+  letter-spacing: 0.06em;
+}
+.vintage-layout .status-vendu {
+  background: rgba(192,84,42,0.09) !important;
+  color: var(--vr) !important;
+  border: 1px solid rgba(192,84,42,0.35) !important;
+  border-radius: 2px !important;
+  font-family: var(--font-ui) !important;
+  font-size: 0.78rem !important;
+  letter-spacing: 0.06em;
+}
+
+/* ── Persuasion hook badges (safe: absolute inside relative card) */
+.vhook {
+  position: absolute;
+  z-index: 2;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  pointer-events: none;
+  line-height: 1.5;
+}
+.vhook-rare {
+  top: 10px; left: 10px;
+  background: var(--vr);
+  color: #fff;
+  border-radius: 2px;
+  transform: rotate(-2deg);
+  box-shadow: 1px 2px 0 rgba(0,0,0,0.25);
+}
+.vhook-scarcity {
+  top: 10px; right: 10px;
+  background: var(--vi);
+  color: var(--vg);
+  border-radius: 2px;
+  border: 1px solid var(--vg);
+  transform: rotate(1.5deg);
+}
+.vhook-coup {
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  background: var(--vg);
+  color: var(--vi);
+  padding: 4px 14px;
+  border-radius: 0 0 4px 4px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.vhook-vendu-stamp {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  pointer-events: none;
+}
+.vhook-vendu-stamp span {
+  font-family: var(--font-stamp);
+  font-size: 2rem;
+  color: rgba(192,84,42,0.7);
+  border: 3px solid rgba(192,84,42,0.55);
+  padding: 4px 14px;
+  border-radius: 3px;
+  transform: rotate(-18deg);
+  letter-spacing: 0.12em;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SEARCH BAR
+══════════════════════════════════════════════════════════════ */
+.vintage-layout .search-filter-bar {
+  background: var(--vp) !important;
+  border-color: rgba(107,76,42,0.28) !important;
+  box-shadow: 2px 2px 0 rgba(107,76,42,0.08), 0 4px 14px rgba(107,76,42,0.07) !important;
+}
+.vintage-layout .search-filter-bar:focus-within {
+  border-color: var(--vg) !important;
+}
+.vintage-layout .search-input { color: var(--vi) !important; }
+.vintage-layout .filter-toggle-btn {
+  background: var(--vr) !important;
+  font-family: var(--font-ui) !important;
+  letter-spacing: 0.04em;
+}
+.vintage-layout .filter-toggle-btn:hover { background: var(--vb) !important; }
+.vintage-layout .filter-dropdown-panel {
+  background: var(--vp) !important;
+  border-color: rgba(107,76,42,0.2) !important;
+}
+.vintage-layout .filter-cat-chip:hover,
+.vintage-layout .filter-cat-chip.active {
+  background: rgba(192,84,42,0.08) !important;
+  border-color: var(--vr) !important;
+  color: var(--vr) !important;
+}
+.vintage-layout .filter-chip.active {
+  background: var(--vr) !important;
+  border-color: var(--vr) !important;
+  color: #fff !important;
+}
+.vintage-layout .filter-apply-btn {
+  background: var(--vi) !important;
+  font-family: var(--font-stamp) !important;
+}
+.vintage-layout .filter-apply-btn:hover { background: var(--vr) !important; }
+.vintage-layout .active-filter-tag {
+  background: rgba(192,84,42,0.08) !important;
+  border-color: var(--vr) !important;
+  color: var(--vr) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FORMS (login, register, ajouter-produit…)
+══════════════════════════════════════════════════════════════ */
+.vintage-layout form {
+  background: var(--vp) !important;
+  border: 1px solid rgba(107,76,42,0.2) !important;
+  box-shadow: 3px 3px 0 rgba(107,76,42,0.08), 0 6px 24px rgba(107,76,42,0.07) !important;
+  border-radius: 4px !important;
+}
+.vintage-layout input,
+.vintage-layout textarea,
+.vintage-layout select {
+  background: rgba(255,255,255,0.75) !important;
+  border: 1.5px solid rgba(107,76,42,0.25) !important;
+  border-radius: 3px !important;
+  color: var(--vi) !important;
+}
+.vintage-layout input:focus,
+.vintage-layout textarea:focus,
+.vintage-layout select:focus {
+  outline: none !important;
+  border-color: var(--vg) !important;
+  box-shadow: 0 0 0 3px rgba(201,152,58,0.12) !important;
+}
+.vintage-layout label {
+  color: var(--vb) !important;
+  font-family: var(--font-ui) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.vintage-layout button[type="submit"] {
+  background: var(--vr) !important;
+  border: 2px solid var(--vb) !important;
+  border-radius: 3px !important;
+  font-family: var(--font-stamp) !important;
+  letter-spacing: 0.06em;
+  color: #fff !important;
+}
+.vintage-layout button[type="submit"]:hover { background: var(--vb) !important; }
+
+/* ══════════════════════════════════════════════════════════════
+   CART PAGE
+══════════════════════════════════════════════════════════════ */
+.vintage-layout .cart-container { color: var(--vi) !important; }
+.vintage-layout .cart-container h2 {
+  font-style: italic;
+  font-size: 2rem !important;
+}
+.vintage-layout .cart-item {
+  background: var(--vp) !important;
+  border: 1px solid rgba(107,76,42,0.18) !important;
+  color: var(--vi) !important;
+  box-shadow: 2px 2px 0 rgba(107,76,42,0.08) !important;
+}
+.vintage-layout .cart-item h3,
+.vintage-layout .cart-item p { color: var(--vi) !important; }
+
+/* ══════════════════════════════════════════════════════════════
+   SCROLLBAR
+══════════════════════════════════════════════════════════════ */
+.vintage-layout ::-webkit-scrollbar { width: 7px; }
+.vintage-layout ::-webkit-scrollbar-track { background: var(--vw); }
+.vintage-layout ::-webkit-scrollbar-thumb { background: rgba(107,76,42,0.35); border-radius: 4px; }
+
+/* ══════════════════════════════════════════════════════════════
+   PAGE FADE IN
+══════════════════════════════════════════════════════════════ */
+@keyframes vintageIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.vintage-layout .products-container,
+.vintage-layout .cart-container,
+.vintage-layout form {
+  animation: vintageIn 0.4s ease both;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE SAFE
+══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .vintage-story-banner {
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    padding: 8px 12px;
+    margin: -20px -20px 20px -20px;
+  }
+  .vintage-page-header h2 { font-size: 1.6rem !important; }
+}
